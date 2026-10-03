@@ -23,6 +23,8 @@ All notable changes to BeatFlow are documented here. The project follows
 
 - Load Quest's system certificate store for verified HTTPS requests from the bundled libcurl client.
 - Keep the Browser action safe when device authorization has not produced a URL.
+- Keep the anonymous WEB_REMIX API key off OAuth-authenticated InnerTube requests.
+- Resolve shortened and TV-size maps through the matching original recording when an exact edit is absent.
 
 ### Changed
 

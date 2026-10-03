@@ -132,6 +132,20 @@ BF_TEST("arbitrary Beat Saber metadata resolves to a confident YouTube track") {
     BF_REQUIRE(result.value().providerId == "right");
 }
 
+BF_TEST("short map edit can use the matching original recording as a radio seed") {
+    FakeMusicProvider music;
+    FakeMapCatalog maps;
+    music.searchTracks = {{"wrong", "Time Left", {"Different Artist"}, 181, "", "", 1.0},
+                          {"right", "残機 - Time Left", {"ZUTOMAYO"}, 181, "", "", 1.0}};
+    RecommendationEngine engine(music, maps, nullptr);
+    CancellationSource cancellation;
+
+    const auto result = engine.resolveTrack("Time Left (TV Size)", "ZUTOMAYO", 91, cancellation.token());
+
+    BF_REQUIRE(result.ok());
+    BF_REQUIRE(result.value().providerId == "right");
+}
+
 BF_TEST("Up Next resolves the current song then matches its radio recommendations") {
     FakeMusicProvider music;
     FakeMapCatalog maps;

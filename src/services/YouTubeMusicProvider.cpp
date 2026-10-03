@@ -447,7 +447,13 @@ YouTubeMusicProvider::rawRequest(const std::string& endpoint, const std::string&
 
     HttpRequest request;
     request.method = HttpRequest::Method::Post;
-    request.url = std::string(kApiBase) + endpoint + "?alt=json&key=" + kWebClientKey;
+    request.url = std::string(kApiBase) + endpoint + "?alt=json";
+    // WEB_REMIX's public API key is for anonymous requests. OAuth requests are
+    // authorized by the bearer token alone; combining both makes InnerTube
+    // reject an otherwise valid personalized request as an invalid argument.
+    if (authentication == Authentication::Anonymous) {
+        request.url += std::string("&key=") + kWebClientKey;
+    }
     request.headers = {{"Content-Type", "application/json"},
                        {"Origin", "https://music.youtube.com"},
                        {"User-Agent", "Mozilla/5.0 BeatFlow/0.1"},

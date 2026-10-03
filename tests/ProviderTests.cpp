@@ -152,6 +152,8 @@ BF_TEST("YouTube search and Up Next work without a connected account") {
     BF_REQUIRE(http.requests.size() == 2);
     BF_REQUIRE(http.requests[0].url.find("/search?") != std::string::npos);
     BF_REQUIRE(http.requests[1].url.find("/next?") != std::string::npos);
+    BF_REQUIRE(http.requests[0].url.find("&key=") != std::string::npos);
+    BF_REQUIRE(http.requests[1].url.find("&key=") != std::string::npos);
     BF_REQUIRE(!headerValue(http.requests[0], "Authorization").has_value());
     BF_REQUIRE(!headerValue(http.requests[1], "Authorization").has_value());
     BF_REQUIRE(headerValue(http.requests[1], "X-Youtube-Client-Name") == "67");
@@ -224,6 +226,8 @@ BF_TEST("connected YouTube Music Home sends authentication for personalized shel
     BF_REQUIRE(http.requests.size() == 2);
     BF_REQUIRE(headerValue(http.requests[0], "Authorization") == "Bearer access");
     BF_REQUIRE(headerValue(http.requests[1], "Authorization") == "Bearer access");
+    BF_REQUIRE(http.requests[0].url.find("&key=") == std::string::npos);
+    BF_REQUIRE(http.requests[1].url.find("&key=") == std::string::npos);
 }
 
 BF_TEST("personalized caches cannot cross account token namespaces") {

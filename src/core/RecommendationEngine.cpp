@@ -19,6 +19,19 @@ std::string lowercaseAscii(std::string value) {
     return value;
 }
 
+std::string stripShortVersionLabel(std::string value) {
+    auto lowercase = lowercaseAscii(value);
+    for (const std::string_view label : {"short version", "short ver", "tv size", "tv edit", "radio edit"}) {
+        std::size_t position = 0;
+        while ((position = lowercase.find(label, position)) != std::string::npos) {
+            value.replace(position, label.size(), label.size(), ' ');
+            lowercase.replace(position, label.size(), label.size(), ' ');
+            position += label.size();
+        }
+    }
+    return value;
+}
+
 } // namespace
 
 RecommendationEngine::RecommendationEngine(MusicProvider& musicProvider, MapCatalog& mapCatalog,
@@ -77,19 +90,33 @@ Outcome<Track> RecommendationEngine::resolveTrack(const std::string& title, cons
                  1.0};
     std::optional<Track> best;
     double bestIdentity = 0.0;
-    for (const auto& candidate : candidates.value()) {
-        MapCandidate comparable;
-        comparable.songTitle = candidate.title;
-        comparable.songArtist = candidate.artists.empty() ? "" : candidate.artists.front();
-        comparable.durationSeconds = candidate.durationSeconds;
-        comparable.rating = 1.0;
-        comparable.upvotes = 100;
-        comparable.difficulties.push_back({Difficulty::Easy, "Standard", 1.0, {}});
-        auto result = matcher_.evaluate(target, comparable, {});
-        if (result && result->scores.identity > bestIdentity) {
-            bestIdentity = result->scores.identity;
-            best = candidate;
+    const auto selectBest = [this, &candidates, &best, &bestIdentity](const Track& identityTarget) {
+        for (const auto& candidate : candidates.value()) {
+            MapCandidate comparable;
+            comparable.songTitle = candidate.title;
+            comparable.songArtist = candidate.artists.empty() ? "" : candidate.artists.front();
+            comparable.durationSeconds = candidate.durationSeconds;
+            comparable.rating = 1.0;
+            comparable.upvotes = 100;
+            comparable.difficulties.push_back({Difficulty::Easy, "Standard", 1.0, {}});
+            auto result = matcher_.evaluate(identityTarget, comparable, {});
+            if (result && result->scores.identity > bestIdentity) {
+                bestIdentity = result->scores.identity;
+                best = candidate;
+            }
         }
+    };
+    selectBest(target);
+
+    // Short edits are frequently absent from YouTube Music even when the original
+    // recording is present. Using the same recording as the radio seed is safe
+    // when title and artist still match; duration is intentionally neutral here.
+    const auto normalizedTitle = TextNormalizer{}.title(title);
+    if (!best && normalizedTitle.recordingMarkers.contains("short")) {
+        auto originalRecording = target;
+        originalRecording.title = stripShortVersionLabel(title);
+        originalRecording.durationSeconds.reset();
+        selectBest(originalRecording);
     }
 
     if (!best) {

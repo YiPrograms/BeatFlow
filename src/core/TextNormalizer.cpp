@@ -19,6 +19,8 @@ const std::vector<std::pair<std::string, std::string>> kMarkers{
     {"sped up", "sped-up"},
     {"slowed", "slowed"},
     {"tv size", "short"},
+    {"tv edit", "short"},
+    {"radio edit", "short"},
     {"short ver", "short"},
     {"short version", "short"},
     {"instrumental", "instrumental"},
