@@ -104,6 +104,7 @@ if(BEATFLOW_BUILD_QUEST OR ANDROID)
         src/quest/QuestCredentialStore.cpp
         src/quest/QuestSongLibrary.cpp
         src/quest/RecommendedNextPanel.cpp
+        src/quest/SongDetailsCatalog.cpp
         src/quest/main.cpp
     )
     file(GLOB BEATFLOW_INLINE_HOOK_SOURCES CONFIGURE_DEPENDS

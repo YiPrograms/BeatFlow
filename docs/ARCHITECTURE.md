@@ -20,8 +20,8 @@ portable recommendation core
 - `TextNormalizer` preserves Unicode and meaningful recording markers while removing presentation
   noise.
 - `Matcher` proves song identity before applying map quality and difficulty suitability.
-- `RecommendationEngine` orchestrates Home, search, radio, map lookup, filtering, deduplication, and
-  session exclusions.
+- `RecommendationEngine` orchestrates personalized seeds, search, radio, map lookup, filtering,
+  deduplication, and session exclusions.
 - `CancellationSource` and `CancellationToken` carry cooperative cancellation without a platform type.
 - `Outcome<T>` and `ServiceError` make user-actionable failure categories explicit.
 
@@ -34,10 +34,12 @@ so a popular alternate recording cannot outrank the intended song.
 
 `include/beatflow/services` and `src/services` implement external boundaries:
 
-- `YouTubeMusicProvider` sends anonymous InnerTube `search` and `next` requests. Authenticated `browse`
-  is used only for personalized Home shelves.
+- `YouTubeMusicProvider` sends anonymous InnerTube `search` and `next` requests. For You reads the
+  account's liked-videos playlist through the official YouTube Data API and expands bounded seeds with
+  anonymous radio.
 - `OAuthClient` owns device authorization, expiry, polling, refresh, and disconnect semantics.
-- `BeatSaverCatalog` translates map search responses into portable candidates.
+- `SongDetailsCatalog` searches the complete on-device BeatSaver metadata cache used by
+  BetterSongSearch, including bilingual title aliases. `BeatSaverCatalog` is the network fallback.
 - `RetryingHttpClient` applies bounded retries, cancellation, and `Retry-After` delays.
 - `AtomicJsonCache` provides bounded, atomic files and rebuilds corrupt entries at the adapter boundary.
 - `ZipArchiveValidator` inspects central-directory paths and size bounds before extraction.

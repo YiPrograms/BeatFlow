@@ -98,6 +98,11 @@
       }
     },
     {
+      "id": "song-details",
+      "versionRange": "=1.0.5",
+      "additionalData": {}
+    },
+    {
       "id": "songcore",
       "versionRange": "=1.1.25",
       "additionalData": {}

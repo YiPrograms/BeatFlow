@@ -64,8 +64,8 @@ CompositionRoot::CompositionRoot()
       musicCache_(dataRoot_ / "cache" / "music"), personalizedCache_(dataRoot_ / "cache" / "accounts"),
       credentials_(dataRoot_, {std::string(build::kOAuthClientId), std::string(build::kOAuthClientSecret)}),
       oauth_(http_, credentials_), music_(http_, oauth_, &musicCache_, &personalizedCache_),
-      catalog_(http_, &mapCache_), library_(http_, dataRoot_ / "staging"),
-      engine_(music_, catalog_, &library_), workers_(2, 32),
+      beatSaverCatalog_(http_, &mapCache_), catalog_(beatSaverCatalog_),
+      library_(http_, dataRoot_ / "staging"), engine_(music_, catalog_, &library_), workers_(2, 32),
       interactiveCancellation_(std::make_shared<CancellationSource>()),
       prefetchCancellation_(std::make_shared<CancellationSource>()) {}
 
@@ -238,7 +238,8 @@ void CompositionRoot::connect(AuthorizationCallback callback) {
                 auto home = music_.home(cancellation->token());
                 if (!home || home.value().empty()) {
                     const auto message =
-                        home ? "YouTube Music Home returned no playable tracks." : home.error().message;
+                        home ? "No recommendations were found from this account's liked videos."
+                             : home.error().message;
                     publish({message, "", "", false, false});
                     return;
                 }
@@ -248,7 +249,7 @@ void CompositionRoot::connect(AuthorizationCallback callback) {
                              false, false});
                     return;
                 }
-                publish({"YouTube Music connected. Personalized For You is ready.", "", "", true, false});
+                publish({"YouTube connected. For You is ready from your liked videos.", "", "", true, false});
                 return;
             }
             publish({"The Google device code expired. Select Connect to try again.", "", "", false, false});

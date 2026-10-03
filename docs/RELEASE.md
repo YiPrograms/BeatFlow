@@ -15,6 +15,6 @@ Publishing is a deliberate maintainer action. A successful build or merge does n
    screenshots. Keep symbols separate from the QMOD.
 8. Publish only after another maintainer verifies the checksum and package contents.
 
-If device authorization, token refresh, authenticated Home/radio validation, or BeatSaver
-download/opening fails, stop the release and document the precise blocker. Do not replace the headset
-implementation with a hosted backend or present fixture UI as live integration.
+If device authorization, token refresh, liked-playlist access, anonymous radio, SongDetails lookup, or
+BeatSaver download/opening fails, stop the release and document the precise blocker. Do not replace
+the headset implementation with a hosted backend or present fixture UI as live integration.

@@ -2,11 +2,12 @@
 
 BeatFlow turns the song you just played into the next Beat Saber map. It resolves the current song
 through YouTube Music's anonymous InnerTube interface, follows its radio queue, finds confident
-BeatSaver matches, and shows the choices on the solo pause and results screens.
+maps in the on-device SongDetails BeatSaver catalog, and shows the choices on the solo pause and
+results screens.
 
 **A Google account is not required for Up Next.** Connecting YouTube Music is optional and adds the
-personalized **For You** feed using your Home recommendations, listening history, likes, and library
-signals.
+personalized **For You** feed. BeatFlow reads the account's YouTube liked-videos playlist through the
+official YouTube Data API, then expands those seeds with anonymous YouTube Music radio.
 
 > [!WARNING]
 > BeatFlow 0.1 is a developer preview for Beat Saber `1.40.8_7379`. The code, portable tests, Quest
@@ -61,7 +62,7 @@ Scotland2.
    ```
 
 3. Install the QMOD with your Quest mod manager. Its manifest declares the required versions of
-   beatsaber-hook, BeatSaverPlusPlus, BSML, custom-types, Paper, SongCore, and WebUtils.
+   beatsaber-hook, BeatSaverPlusPlus, BSML, custom-types, Paper, SongDetails, SongCore, and WebUtils.
 4. Start Beat Saber and confirm that **BeatFlow** appears in the Mods menu.
 
 Do not install this build on another Beat Saber version. Native Quest mods are version-specific.
@@ -77,9 +78,14 @@ personalized For You feed.
 3. Enter the displayed code and approve access. Return to Beat Saber; BeatFlow continues polling and
    finishes automatically.
 
-The **Browser** button reopens the same Google page while its code is active. BeatFlow validates an
-authenticated Home request and a radio request before reporting the connection as ready. You do not
-need to create or copy an OAuth JSON file when using an official BeatFlow build.
+The **Browser** button reopens the same Google page while its code is active. BeatFlow validates access
+to the official YouTube Data API before reporting the connection as ready. You do not need to create
+or copy an OAuth JSON file when using an official BeatFlow build.
+
+Google OAuth bearer tokens are not accepted by YouTube Music's private InnerTube Home endpoint.
+BeatFlow therefore uses the supported Data API only for account data and keeps InnerTube search and
+radio anonymous. The preview's personalization is based on likes; listening-history and private Home
+shelves are not read.
 
 Google requires device apps to use a **TVs and Limited Input devices** OAuth client, as described in
 its [limited-input device authorization guide](https://developers.google.com/identity/protocols/oauth2/limited-input-device).
@@ -113,9 +119,9 @@ level; the results option takes effect on the next successful finish.
 
 ### For You and filters
 
-Open **Mods → BeatFlow** and connect YouTube Music. Select **Refresh** to reload personalized Home
-shelves. BeatFlow expands only a bounded number of album and playlist shelves, skips non-song cards,
-and shows maps as matching completes.
+Open **Mods → BeatFlow** and connect YouTube. Select **Refresh** to reload recommendations derived from
+recent liked videos. BeatFlow expands a bounded number of those seeds through anonymous song radio and
+shows maps as matching completes.
 
 - **Difficulty** cycles through All, Hard, Expert, and Expert+.
 - **NPS** cycles through Any, up to 4, 4–6, and 6+ notes per second.
@@ -135,8 +141,9 @@ must provide the build environment variables documented in [Development](docs/DE
 honors Google's polling interval, expiration, and slow-down responses.
 
 **A song has no Up Next shelf.** BeatFlow needs a usable title and artist and a confident YouTube and
-BeatSaver identity match. It deliberately rejects a popular but unrelated remix, cover, live version,
-or shortened recording.
+BeatSaver identity match. It searches the same on-device SongDetails catalog used by
+BetterSongSearch, including Japanese/English bilingual title aliases. It deliberately rejects a
+popular but unrelated remix, cover, live version, or shortened recording.
 
 **A download failed.** Retry from the card. Interrupted work stays in staging and cannot publish a
 partial custom song. Maps with unsupported requirements are excluded before download.
@@ -160,9 +167,9 @@ The portable core is ordinary C++20 and can be developed without Beat Saber or a
 [Architecture](docs/ARCHITECTURE.md), and [Testing](docs/TESTING.md). Release maintainers should also
 follow [Release process](docs/RELEASE.md).
 
-BetterSongSearchQuest's `1.40.8` release provided the reference dependency set. BeatFlow uses
-ytmusicapi's public documentation as a behavioral reference for the small InnerTube surface it needs;
-it does not bundle either project. Full attribution is in [Third-party notices](THIRD_PARTY_NOTICES.md).
+BetterSongSearchQuest's `1.40.8` release provided the reference dependency set and demonstrated the
+SongDetails catalog search approach. BeatFlow depends directly on SongDetails, but does not require
+BetterSongSearch itself. Full attribution is in [Third-party notices](THIRD_PARTY_NOTICES.md).
 
 Changes are recorded in the [changelog](CHANGELOG.md). Security reports follow
 [SECURITY.md](SECURITY.md). BeatFlow is available under the [MIT License](LICENSE).

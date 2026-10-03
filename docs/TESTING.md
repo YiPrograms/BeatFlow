@@ -11,8 +11,9 @@ ctest --preset portable-debug
 scripts/check-format.sh
 ```
 
-Fixture tests cover mixed Home shelves, radio and search parsing, malformed responses, anonymous auth
-headers, device authorization, refresh, offline cache fallback, corrupt cache envelopes, map metadata,
+Fixture tests cover liked-playlist account data, mixed music shelves, radio and search parsing,
+malformed responses, anonymous auth headers, device authorization, refresh, offline cache fallback,
+corrupt cache envelopes, map metadata,
 multilingual identity, duration boundaries, remix and cover conflicts, duplicates, difficulty/NPS
 boundaries, cancellation, server backoff, atomic storage, bounded workers, and unsafe ZIP paths.
 

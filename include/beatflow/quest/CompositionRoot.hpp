@@ -4,6 +4,7 @@
 #include "beatflow/quest/QuestCredentialStore.hpp"
 #include "beatflow/quest/QuestHttpClient.hpp"
 #include "beatflow/quest/QuestSongLibrary.hpp"
+#include "beatflow/quest/SongDetailsCatalog.hpp"
 #include "beatflow/services/AtomicJsonCache.hpp"
 #include "beatflow/services/BeatSaverCatalog.hpp"
 #include "beatflow/services/OAuthClient.hpp"
@@ -92,7 +93,8 @@ class CompositionRoot {
     QuestCredentialStore credentials_;
     OAuthClient oauth_;
     YouTubeMusicProvider music_;
-    BeatSaverCatalog catalog_;
+    BeatSaverCatalog beatSaverCatalog_;
+    SongDetailsCatalog catalog_;
     QuestSongLibrary library_;
     RecommendationEngine engine_;
     WorkerQueue workers_;

@@ -8,7 +8,7 @@ All notable changes to BeatFlow are documented here. The project follows
 ### Added
 
 - Anonymous current-song resolution and InnerTube radio recommendations.
-- Optional Google device authorization for personalized YouTube Music Home recommendations.
+- Optional Google device authorization for For You recommendations derived from liked videos.
 - Quest-browser sign-in with release-provided OAuth client metadata; no user-side JSON copy is needed.
 - Identity-first BeatSaver matching with difficulty and NPS filters.
 - Progressive For You browser plus configurable pause and post-results Up Next panels.
@@ -23,8 +23,12 @@ All notable changes to BeatFlow are documented here. The project follows
 
 - Load Quest's system certificate store for verified HTTPS requests from the bundled libcurl client.
 - Keep the Browser action safe when device authorization has not produced a URL.
-- Keep the anonymous WEB_REMIX API key off OAuth-authenticated InnerTube requests.
+- Keep Google OAuth tokens off the unsupported authenticated InnerTube path.
 - Resolve shortened and TV-size maps through the matching original recording when an exact edit is absent.
+- Replace low-recall BeatSaver text search with the complete SongDetails catalog used by
+  BetterSongSearch and match bilingual Japanese/English title aliases.
+- Avoid YouTube Music's rejected authenticated InnerTube requests by reading likes through the
+  official YouTube Data API and expanding them with anonymous radio.
 
 ### Changed
 

@@ -25,18 +25,17 @@ class YouTubeMusicProvider final : public MusicProvider {
     Outcome<std::vector<Track>> parseTracks(const std::string& response, const std::string& source) const;
 
   private:
-    enum class Authentication { Anonymous, Required };
-
     struct RawResponse {
         std::string body;
         bool stale{false};
     };
 
     Outcome<RawResponse> rawRequest(const std::string& endpoint, const std::string& payload,
-                                    Authentication authentication, const CancellationToken& cancellation);
+                                    const CancellationToken& cancellation);
+    Outcome<RawResponse> accountGet(const std::string& url, const CancellationToken& cancellation);
+    Outcome<std::vector<Track>> likedVideos(const CancellationToken& cancellation);
     Outcome<std::vector<Track>> request(const std::string& endpoint, const std::string& payload,
-                                        const std::string& source, Authentication authentication,
-                                        const CancellationToken& cancellation);
+                                        const std::string& source, const CancellationToken& cancellation);
     [[nodiscard]] std::string contextPayload(const std::string& clientVersion) const;
 
     HttpClient& http_;

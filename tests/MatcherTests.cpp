@@ -44,6 +44,14 @@ BF_TEST("exact multilingual track matches the corresponding map") {
     BF_REQUIRE(result->scores.identity > 0.95);
 }
 
+BF_TEST("bilingual provider titles match an English BeatSaver title alias") {
+    Matcher matcher;
+    auto result =
+        matcher.evaluate(track("残機 - Time Left", "ZUTOMAYO", 232), map("Time Left", "ZUTOMAYO", 232), {});
+    BF_REQUIRE(result.has_value());
+    BF_REQUIRE(result->scores.title > 0.95);
+}
+
 BF_TEST("recording markers prevent a popular remix from replacing an exact song") {
     Matcher matcher;
     auto result =

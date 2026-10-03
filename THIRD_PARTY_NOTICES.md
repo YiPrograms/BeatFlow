@@ -9,6 +9,7 @@ Quest projects; their own licenses and notices apply:
 - [Il2CppQuestTypePatching / custom-types](https://github.com/QuestPackageManager/Il2CppQuestTypePatching)
 - [paperlog / Paper](https://github.com/Fernthedev/paperlog)
 - [Scotland2](https://github.com/sc2ad/scotland2)
+- [SongDetails](https://github.com/bsq-ports/SongDetails)
 - [Quest SongCore](https://github.com/raineaeternal/Quest-SongCore)
 - [WebUtils](https://github.com/bsq-ports/WebUtils)
 - [nlohmann/json](https://github.com/nlohmann/json)
@@ -16,9 +17,8 @@ Quest projects; their own licenses and notices apply:
   linked for BeatFlow's request transport
 
 [BetterSongSearchQuest](https://github.com/bsq-ports/BetterSongSearchQuest) informed the compatible
-Beat Saber `1.40.8` dependency pins. [ytmusicapi](https://github.com/sigma67/ytmusicapi) documentation
-informed the limited YouTube Music request and OAuth behavior. Neither project's code is copied into
-BeatFlow.
+Beat Saber `1.40.8` dependency pins and the SongDetails catalog approach. BeatFlow does not copy or
+require BetterSongSearchQuest itself.
 
 YouTube, YouTube Music, Beat Saber, BeatSaver, Meta Quest, and Google are trademarks of their
 respective owners. BeatFlow is an independent community project and is not endorsed by them.

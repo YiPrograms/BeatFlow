@@ -34,6 +34,11 @@
       "downloadIfMissing": "https://github.com/Fernthedev/paperlog/releases/download/v4.8.0/paper2_scotland2.qmod"
     },
     {
+      "id": "song-details",
+      "version": "^1.0.5",
+      "downloadIfMissing": "https://github.com/bsq-ports/SongDetails/releases/download/v1.0.5/SongDetails.qmod"
+    },
+    {
       "id": "songcore",
       "version": "^1.1.25",
       "downloadIfMissing": "https://github.com/raineaeternal/Quest-SongCore/releases/download/v1.1.25/SongCore.qmod"

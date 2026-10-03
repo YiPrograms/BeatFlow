@@ -1,0 +1,16 @@
+{
+  "items": [
+    {
+      "snippet": {
+        "title": "Time Left",
+        "videoOwnerChannelTitle": "ZUTOMAYO - Topic",
+        "resourceId": { "videoId": "liked-seed" },
+        "thumbnails": {
+          "default": { "url": "https://example.test/small.jpg", "width": 120 },
+          "high": { "url": "https://example.test/large.jpg", "width": 480 }
+        }
+      },
+      "contentDetails": { "videoId": "liked-seed" }
+    }
+  ]
+}

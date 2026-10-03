@@ -209,25 +209,30 @@ BF_TEST("personalized YouTube Music Home still requires a connected account") {
     BF_REQUIRE(http.requests.empty());
 }
 
-BF_TEST("connected YouTube Music Home sends authentication for personalized shelves") {
+BF_TEST("connected For You reads likes with OAuth and expands them through anonymous radio") {
     FakeHttp http;
     MemoryCredentials credentials;
     credentials.tokens = OAuthTokens{"access", "refresh", "Bearer", std::numeric_limits<std::int64_t>::max()};
     OAuthClient oauth(http, credentials);
     YouTubeMusicProvider provider(http, oauth);
-    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_home.json")}));
+    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_channels.json")}));
+    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_likes.json")}));
     http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_radio.json")}));
     CancellationSource cancellation;
 
     const auto result = provider.home(cancellation.token());
 
     BF_REQUIRE(result.ok());
-    BF_REQUIRE(result.value().size() == 3);
-    BF_REQUIRE(http.requests.size() == 2);
+    BF_REQUIRE(result.value().size() == 2);
+    BF_REQUIRE(http.requests.size() == 3);
     BF_REQUIRE(headerValue(http.requests[0], "Authorization") == "Bearer access");
     BF_REQUIRE(headerValue(http.requests[1], "Authorization") == "Bearer access");
-    BF_REQUIRE(http.requests[0].url.find("&key=") == std::string::npos);
-    BF_REQUIRE(http.requests[1].url.find("&key=") == std::string::npos);
+    BF_REQUIRE(http.requests[0].url.find("youtube/v3/channels") != std::string::npos);
+    BF_REQUIRE(http.requests[1].url.find("youtube/v3/playlistItems") != std::string::npos);
+    BF_REQUIRE(!headerValue(http.requests[2], "Authorization").has_value());
+    BF_REQUIRE(http.requests[2].url.find("/next?") != std::string::npos);
+    BF_REQUIRE(http.requests[2].url.find("&key=") != std::string::npos);
+    BF_REQUIRE(result.value().front().sourceShelf == "Recommended from your likes");
 }
 
 BF_TEST("personalized caches cannot cross account token namespaces") {
@@ -238,12 +243,14 @@ BF_TEST("personalized caches cannot cross account token namespaces") {
         OAuthTokens{"access-a", "refresh-a", "Bearer", std::numeric_limits<std::int64_t>::max()};
     OAuthClient oauth(http, credentials);
     YouTubeMusicProvider provider(http, oauth, nullptr, &cache);
-    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_search.json")}));
+    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_channels.json")}));
+    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_likes.json")}));
+    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_radio.json")}));
     CancellationSource cancellation;
 
     const auto accountA = provider.home(cancellation.token());
     BF_REQUIRE(accountA.ok());
-    BF_REQUIRE(cache.values.size() == 1);
+    BF_REQUIRE(cache.values.size() == 2);
 
     credentials.tokens =
         OAuthTokens{"access-b", "refresh-b", "Bearer", std::numeric_limits<std::int64_t>::max()};

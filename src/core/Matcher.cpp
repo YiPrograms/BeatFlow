@@ -6,6 +6,7 @@
 #include <numeric>
 #include <set>
 #include <string>
+#include <string_view>
 
 namespace beatflow {
 namespace {
@@ -52,6 +53,25 @@ double tokenDice(const std::vector<std::string>& left, const std::vector<std::st
     return (2.0 * static_cast<double>(intersection.size())) / static_cast<double>(left.size() + right.size());
 }
 
+std::vector<std::string_view> titleAliases(std::string_view title) {
+    std::vector<std::string_view> aliases{title};
+    for (const auto separator : {std::string_view{" - "}, std::string_view{" / "}, std::string_view{" | "}}) {
+        std::size_t start = 0;
+        auto position = title.find(separator, start);
+        while (position != std::string_view::npos) {
+            if (position > start) {
+                aliases.push_back(title.substr(start, position - start));
+            }
+            start = position + separator.size();
+            if (start < title.size()) {
+                aliases.push_back(title.substr(start));
+            }
+            position = title.find(separator, start);
+        }
+    }
+    return aliases;
+}
+
 } // namespace
 
 Matcher::Matcher(ScoringWeights weights) : weights_(weights) {}
@@ -63,14 +83,23 @@ std::optional<RecommendedMap> Matcher::evaluate(const Track& track, const MapCan
         return std::nullopt;
     }
 
-    const auto normalizedTrackTitle = normalizer_.title(track.title);
     const auto normalizedMapTitle = normalizer_.title(map.songTitle);
-    if (!recordingMarkersCompatible(normalizedTrackTitle, normalizedMapTitle)) {
+    double bestTitleScore = 0.0;
+    bool compatibleAlias = false;
+    for (const auto alias : titleAliases(track.title)) {
+        const auto normalizedAlias = normalizer_.title(alias);
+        if (!recordingMarkersCompatible(normalizedAlias, normalizedMapTitle)) {
+            continue;
+        }
+        compatibleAlias = true;
+        bestTitleScore = std::max(bestTitleScore, textSimilarity(normalizedAlias, normalizedMapTitle));
+    }
+    if (!compatibleAlias) {
         return std::nullopt;
     }
 
     MatchScores scores;
-    scores.title = textSimilarity(normalizedTrackTitle, normalizedMapTitle);
+    scores.title = bestTitleScore;
     scores.artist = artistSimilarity(track, map);
     scores.duration = durationSimilarity(track, map);
     scores.identity = scores.title * weights_.titleIdentity + scores.artist * weights_.artistIdentity +
