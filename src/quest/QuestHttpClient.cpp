@@ -1,35 +1,13 @@
 #include "beatflow/quest/QuestHttpClient.hpp"
 
+#include "beatflow/services/HttpHeaders.hpp"
+
 #include "web-utils/shared/WebUtils.hpp"
 
-#include <algorithm>
-#include <cctype>
 #include <span>
-#include <sstream>
 
 namespace beatflow::quest {
 namespace {
-
-std::vector<std::pair<std::string, std::string>> parseHeaders(const std::string& raw) {
-    std::vector<std::pair<std::string, std::string>> result;
-    std::istringstream lines(raw);
-    for (std::string line; std::getline(lines, line);) {
-        if (!line.empty() && line.back() == '\r') {
-            line.pop_back();
-        }
-        const auto separator = line.find(':');
-        if (separator == std::string::npos) {
-            continue;
-        }
-        auto name = line.substr(0, separator);
-        auto value = line.substr(separator + 1);
-        value.erase(value.begin(), std::find_if(value.begin(), value.end(), [](unsigned char character) {
-                        return std::isspace(character) == 0;
-                    }));
-        result.emplace_back(std::move(name), std::move(value));
-    }
-    return result;
-}
 
 ServiceError curlError(int status) {
     return {ErrorCode::Network, "The network request failed (curl " + std::to_string(status) + ").", true,
@@ -71,7 +49,10 @@ Outcome<HttpResponse> QuestHttpClient::send(const HttpRequest& request,
     }
     HttpResponse translated;
     translated.status = response.httpCode;
-    translated.headers = parseHeaders(response.responseHeaders);
+    if (translated.status == 0) {
+        translated.status = http::statusFromRawHeaders(response.responseHeaders);
+    }
+    translated.headers = http::parseHeaders(response.responseHeaders);
     if (response.responseData) {
         translated.body = std::move(*response.responseData);
     }

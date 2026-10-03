@@ -40,8 +40,10 @@ Outcome<OAuthClientCredentials> QuestCredentialStore::loadClientCredentials() {
         if (!import) {
             return Outcome<OAuthClientCredentials>::failure(
                 {ErrorCode::Configuration,
-                 "Add oauth_client.json to the BeatFlow data folder before connecting YouTube Music.", false,
-                 std::nullopt});
+                 "Personalized For You needs your own Google OAuth client. Copy oauth_client.json to "
+                 "/sdcard/ModData/com.beatgames.beatsaber/Mods/BeatFlow/. Anonymous Up Next does not "
+                 "need an account.",
+                 false, std::nullopt});
         }
         std::string plaintext((std::istreambuf_iterator<char>(import)), std::istreambuf_iterator<char>());
         auto imported = writeEncrypted(encryptedPath, plaintext);

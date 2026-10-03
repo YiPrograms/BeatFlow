@@ -41,6 +41,7 @@ target_compile_features(beatflow_core PUBLIC cxx_std_20)
 add_library(beatflow_services STATIC
     src/services/AtomicJsonCache.cpp
     src/services/BeatSaverCatalog.cpp
+    src/services/HttpHeaders.cpp
     src/services/OAuthClient.cpp
     src/services/RetryingHttpClient.cpp
     src/services/WorkerQueue.cpp

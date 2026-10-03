@@ -3,13 +3,14 @@
           xsi:noNamespaceSchemaLocation='https://raw.githubusercontent.com/RedBrumbler/Quest-BSML-Docs/gh-pages/schema.xsd'>
   <horizontal preferred-height='8' child-expand-width='false'>
     <primary-button text='Refresh' on-click='Refresh' pref-width='18'/>
-    <button text='Connect YouTube Music' on-click='Connect' pref-width='34'/>
+    <button text='Connect personalized For You' on-click='Connect' pref-width='38'/>
     <button text='Disconnect' on-click='Disconnect' pref-width='20'/>
     <button text='Clear local data' on-click='ClearLocalData' pref-width='24'/>
     <button text='Cancel' on-click='Cancel' pref-width='15'/>
   </horizontal>
   <text id='connectionText' preferred-height='8' font-size='2.7' align='Center'
-        word-wrapping='true' text='A Google account is optional. Connect only for personalized For You.'/>
+        word-wrapping='true'
+        text='Anonymous Up Next needs no account. Personalized For You requires your own oauth_client.json in BeatFlow mod data.'/>
   <text id='statusText' preferred-height='7' font-size='3.0' align='Center'
         word-wrapping='true' text='Loading…'/>
   <horizontal preferred-height='7' child-expand-width='false'>

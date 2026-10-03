@@ -79,7 +79,13 @@ void ForYouViewController::DidActivate(bool firstActivation, bool, bool) {
                 });
         }
     } else {
-        Refresh();
+        render();
+        const auto state = CompositionRoot::instance().browseState();
+        if (state.recommendations.empty() && !state.loading) {
+            setText(statusText,
+                    "Personalized For You is optional. Add your OAuth client file, then select Connect. "
+                    "Anonymous Up Next already works without an account.");
+        }
     }
 }
 

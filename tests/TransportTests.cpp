@@ -1,5 +1,6 @@
 #include "Test.hpp"
 
+#include "beatflow/services/HttpHeaders.hpp"
 #include "beatflow/services/RetryingHttpClient.hpp"
 #include "beatflow/services/ZipArchiveValidator.hpp"
 
@@ -62,6 +63,19 @@ std::vector<std::uint8_t> centralDirectoryOnly(const std::string& name) {
 }
 
 } // namespace
+
+BF_TEST("HTTP header parser recovers the final status from redirects") {
+    constexpr std::string_view headers =
+        "HTTP/1.1 200 Connection established\r\n\r\n"
+        "HTTP/2 302\r\nlocation: https://example.test/final\r\n\r\n"
+        "HTTP/2 200\r\ncontent-type: application/json\r\nretry-after: 2\r\n\r\n";
+
+    BF_REQUIRE(http::statusFromRawHeaders(headers) == 200);
+    const auto parsed = http::parseHeaders(headers);
+    BF_REQUIRE(parsed.size() == 3);
+    BF_REQUIRE(parsed.back().first == "retry-after");
+    BF_REQUIRE(parsed.back().second == "2");
+}
 
 BF_TEST("HTTP retry honors a server delay and succeeds within its bound") {
     SequenceHttp inner;
