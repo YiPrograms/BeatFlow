@@ -9,9 +9,11 @@
     <button text='Clear local data' on-click='ClearLocalData' pref-width='21'/>
     <button text='Cancel' on-click='Cancel' pref-width='13'/>
   </horizontal>
-  <text id='connectionText' preferred-height='8' font-size='2.7' align='Center'
+  <text id='connectionText' preferred-height='7' font-size='2.7' align='Center'
         word-wrapping='true'
         text='Anonymous Up Next needs no account. Sign in opens Google in the Quest browser for personalized For You.'/>
+  <text id='pairingCodeText' preferred-height='10' font-size='8.0' align='Center'
+        word-wrapping='false' text=''/>
   <text id='statusText' preferred-height='7' font-size='3.0' align='Center'
         word-wrapping='true' text='Loading…'/>
   <horizontal preferred-height='7' child-expand-width='false'>

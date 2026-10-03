@@ -24,6 +24,10 @@ All notable changes to BeatFlow are documented here. The project follows
 - Load Quest's system certificate store for verified HTTPS requests from the bundled libcurl client.
 - Keep the Browser action safe when device authorization has not produced a URL.
 
+### Changed
+
+- Display the Google device pairing code as a large, dedicated line for easier reading in-headset.
+
 ## [0.1.0] - Unreleased developer preview
 
 Quest 3 hardware acceptance remains pending.

@@ -16,6 +16,7 @@ DECLARE_CLASS_CODEGEN(beatflow::quest, ForYouViewController, HMUI::ViewControlle
                                   bool removedFromHierarchy, bool screenSystemDisabling);
 
     DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, connectionText);
+    DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, pairingCodeText);
     DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, statusText);
     DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, filterText);
     DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, pageText);

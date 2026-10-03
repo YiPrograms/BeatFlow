@@ -106,10 +106,11 @@ void ForYouViewController::Connect() {
     CompositionRoot::instance().connect([this](const AuthorizationViewState& state) {
         std::string connection = state.message;
         if (!state.verificationUrl.empty()) {
-            connection += "\n" + state.verificationUrl + "  Code: " + state.userCode;
+            connection += "\n" + state.verificationUrl;
             authorizationUrl = il2cpp_utils::newcsstr(state.verificationUrl);
         }
         setText(connectionText, connection);
+        setText(pairingCodeText, state.userCode);
         if (!state.verificationUrl.empty()) {
             OpenBrowser();
         }
@@ -134,6 +135,7 @@ void ForYouViewController::OpenBrowser() {
 
 void ForYouViewController::Disconnect() {
     authorizationUrl = nullptr;
+    setText(pairingCodeText, "");
     const auto result = CompositionRoot::instance().disconnect();
     setText(connectionText, result ? std::string("YouTube Music disconnected. Anonymous Up Next still works.")
                                    : result.error().message);
