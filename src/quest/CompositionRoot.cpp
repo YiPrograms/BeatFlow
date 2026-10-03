@@ -115,6 +115,7 @@ void CompositionRoot::refreshForYou(RecommendationFilters filters, Recommendatio
         browseState_ = forYouState_;
         browseMode_ = BrowseMode::ForYou;
     }
+    logger.info("For You refresh started");
     dispatch([callback] { callback({{}, std::nullopt, "Personalized For You", true, false}); });
 
     auto workerCallback = callback;
@@ -154,6 +155,11 @@ void CompositionRoot::refreshForYou(RecommendationFilters filters, Recommendatio
                 });
             } else if (result.error().code != ErrorCode::Cancelled) {
                 finished.error = result.error();
+            }
+            if (finished.error) {
+                logger.warn("For You refresh failed: {}", finished.error->message);
+            } else {
+                logger.info("For You refresh found {} playable maps", finished.recommendations.size());
             }
             dispatch([this, cancellation, generation, callback, finished = std::move(finished)] {
                 {
@@ -257,6 +263,7 @@ void CompositionRoot::connect(AuthorizationCallback callback) {
                     return;
                 }
                 publish({"YouTube connected. For You is ready from your liked videos.", "", "", true, false});
+                logger.info("Google account validation completed");
                 return;
             }
             publish({"The Google device code expired. Select Connect to try again.", "", "", false, false});
@@ -265,6 +272,11 @@ void CompositionRoot::connect(AuthorizationCallback callback) {
             callback({"BeatFlow's worker queue is full. Try Connect again.", "", "", false, false});
         });
     }
+}
+
+bool CompositionRoot::hasConnectedAccount() {
+    const auto tokens = credentials_.loadTokens();
+    return tokens && tokens.value().has_value();
 }
 
 void CompositionRoot::cancelInteractive() {

@@ -53,6 +53,7 @@ class CompositionRoot {
 
     void refreshForYou(RecommendationFilters filters, RecommendationCallback callback);
     void connect(AuthorizationCallback callback);
+    [[nodiscard]] bool hasConnectedAccount();
     void cancelInteractive();
     Outcome<bool> disconnect();
     Outcome<bool> clearLocalData();

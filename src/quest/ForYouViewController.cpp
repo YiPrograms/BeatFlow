@@ -84,9 +84,13 @@ void ForYouViewController::DidActivate(bool firstActivation, bool, bool) {
         render();
         const auto state = CompositionRoot::instance().browseState();
         if (state.recommendations.empty() && !state.loading) {
-            setText(statusText,
-                    "Personalized For You is optional. Select Sign in with Google to open the Quest "
-                    "browser. Anonymous Up Next already works without an account.");
+            if (CompositionRoot::instance().hasConnectedAccount()) {
+                Refresh();
+            } else {
+                setText(statusText,
+                        "Personalized For You is optional. Select Sign in with Google to open the Quest "
+                        "browser. Anonymous Up Next already works without an account.");
+            }
         }
     }
 }

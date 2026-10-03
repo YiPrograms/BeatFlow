@@ -58,7 +58,9 @@ void RecommendedNextPanel::ctor() {
 
 void RecommendedNextPanel::bind(GlobalNamespace::ResultsViewController* results) {
     resultsView = results;
-    BSML::parse_and_construct(Assets::RecommendedNext_bsml, get_transform(), this);
+    if (headingText == nullptr) {
+        BSML::parse_and_construct(Assets::RecommendedNext_bsml, get_transform(), this);
+    }
     render();
     if (CompositionRoot::instance().nextState().loading) {
         SafePtrUnity<RecommendedNextPanel> panel(this);

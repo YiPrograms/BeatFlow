@@ -357,7 +357,7 @@ Outcome<std::vector<Track>> YouTubeMusicProvider::home(const CancellationToken& 
         return seeds;
     }
 
-    std::vector<Track> recommendations;
+    std::vector<Track> recommendations = seeds.value();
     std::unordered_set<std::string> seen;
     for (const auto& seed : seeds.value()) {
         seen.insert(seed.providerId);
@@ -378,10 +378,7 @@ Outcome<std::vector<Track>> YouTubeMusicProvider::home(const CancellationToken& 
             }
         }
     }
-    if (!recommendations.empty()) {
-        return Outcome<std::vector<Track>>::success(std::move(recommendations));
-    }
-    return seeds;
+    return Outcome<std::vector<Track>>::success(std::move(recommendations));
 }
 
 Outcome<std::vector<Track>> YouTubeMusicProvider::likedVideos(const CancellationToken& cancellation) {

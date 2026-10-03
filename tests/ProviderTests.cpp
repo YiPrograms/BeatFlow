@@ -223,7 +223,7 @@ BF_TEST("connected For You reads likes with OAuth and expands them through anony
     const auto result = provider.home(cancellation.token());
 
     BF_REQUIRE(result.ok());
-    BF_REQUIRE(result.value().size() == 2);
+    BF_REQUIRE(result.value().size() == 3);
     BF_REQUIRE(http.requests.size() == 3);
     BF_REQUIRE(headerValue(http.requests[0], "Authorization") == "Bearer access");
     BF_REQUIRE(headerValue(http.requests[1], "Authorization") == "Bearer access");
@@ -232,7 +232,8 @@ BF_TEST("connected For You reads likes with OAuth and expands them through anony
     BF_REQUIRE(!headerValue(http.requests[2], "Authorization").has_value());
     BF_REQUIRE(http.requests[2].url.find("/next?") != std::string::npos);
     BF_REQUIRE(http.requests[2].url.find("&key=") != std::string::npos);
-    BF_REQUIRE(result.value().front().sourceShelf == "Recommended from your likes");
+    BF_REQUIRE(result.value().front().sourceShelf == "Your liked videos");
+    BF_REQUIRE(result.value().back().sourceShelf == "Recommended from your likes");
 }
 
 BF_TEST("personalized caches cannot cross account token namespaces") {

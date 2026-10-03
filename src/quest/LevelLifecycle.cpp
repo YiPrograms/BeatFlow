@@ -40,20 +40,29 @@ MAKE_HOOK_MATCH(ResultsActivated, &GlobalNamespace::ResultsViewController::DidAc
                 GlobalNamespace::ResultsViewController* self, bool firstActivation, bool addedToHierarchy,
                 bool screenSystemEnabling) {
     ResultsActivated(self, firstActivation, addedToHierarchy, screenSystemEnabling);
-    if (!firstActivation || !CompositionRoot::instance().showNextOnResults() ||
-        self->____levelCompletionResults == nullptr ||
-        self->____levelCompletionResults->___levelEndStateType.value__ != 1) {
+    const bool enabled = CompositionRoot::instance().showNextOnResults();
+    const bool completed = self->____levelCompletionResults != nullptr &&
+                           self->____levelCompletionResults->___levelEndStateType.value__ == 1;
+    logger.info("Results screen activated: first={}, enabled={}, completed={}", firstActivation, enabled,
+                completed);
+    if (!enabled || !completed) {
         return;
     }
-    auto* panel = self->get_gameObject()->AddComponent<RecommendedNextPanel*>();
+    auto* panel = self->get_gameObject()->GetComponent<RecommendedNextPanel*>();
+    if (panel == nullptr) {
+        panel = self->get_gameObject()->AddComponent<RecommendedNextPanel*>();
+    }
     panel->bind(self);
 }
 
 MAKE_HOOK_MATCH(PauseMenuShown, &GlobalNamespace::PauseMenuManager::ShowMenu, void,
                 GlobalNamespace::PauseMenuManager* self) {
     PauseMenuShown(self);
-    if (!soloLevelActive || !CompositionRoot::instance().showNextOnPause() ||
-        self->____pauseContainerTransform == nullptr) {
+    const bool enabled = CompositionRoot::instance().showNextOnPause();
+    const bool hasContainer = self->____pauseContainerTransform != nullptr;
+    logger.info("Pause screen shown: solo={}, enabled={}, container={}", soloLevelActive, enabled,
+                hasContainer);
+    if (!soloLevelActive || !enabled || !hasContainer) {
         return;
     }
     auto container = self->____pauseContainerTransform->get_gameObject();

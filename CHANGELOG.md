@@ -34,6 +34,9 @@ All notable changes to BeatFlow are documented here. The project follows
 - Extract the exact validated BeatSaver archive instead of passing a local file URL back through the
   network downloader.
 - Keep For You and Up Next browse state separate while background results arrive.
+- Retry For You automatically when a connected account returns to an empty view, and include liked
+  tracks alongside their radio recommendations so account setup always has useful map candidates.
+- Rebind the Up Next shelf whenever Beat Saber reuses its results controller.
 
 ### Changed
 
