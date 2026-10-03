@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "mod": "BeatFlow",
+  "version": "0.1.0",
+  "beatSaberPackageVersion": "1.40.8_7379",
+  "modloader": "Scotland2",
+  "androidAbi": "arm64-v8a",
+  "headsets": {
+    "Meta Quest 3": "validation-pending",
+    "Meta Quest 2": "unverified",
+    "Meta Quest 3S": "unverified",
+    "Meta Quest Pro": "unverified",
+    "Meta Quest 1": "unsupported"
+  },
+  "pcvr": "unsupported"
+}

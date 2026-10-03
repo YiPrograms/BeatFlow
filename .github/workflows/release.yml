@@ -1,0 +1,64 @@
+name: Build draft release
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Signed release tag to build
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  QPM_VERSION: 1.5.11
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Require a tag
+        run: git describe --tags --exact-match HEAD
+      - name: Install tools and QPM
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build clang-format unzip
+          curl --fail --location --silent --show-error \
+            --output /tmp/qpm.zip \
+            "https://github.com/QuestPackageManager/QPM.CLI/releases/download/v${QPM_VERSION}/qpm-linux-x64.zip"
+          unzip /tmp/qpm.zip -d /tmp/qpm
+          chmod +x /tmp/qpm/qpm
+          echo /tmp/qpm >> "$GITHUB_PATH"
+      - name: Portable validation
+        run: |
+          cmake --preset portable-debug
+          cmake --build --preset portable-debug
+          ctest --preset portable-debug
+          scripts/check-format.sh
+      - name: Pinned Quest build
+        run: |
+          qpm restore
+          qpm ndk resolve -d
+          cmake --preset quest-release
+          cmake --build --preset quest-release
+          python3 scripts/package.py --build-dir build/quest
+      - name: Verify package
+        run: |
+          cd dist
+          sha256sum --check SHA256SUMS
+          unzip -t BeatFlow-0.1.0.qmod
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BeatFlow-${{ inputs.ref }}
+          path: dist/
+          if-no-files-found: error
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ inputs.ref }}" dist/* \
+            --draft --verify-tag --generate-notes --title "BeatFlow ${{ inputs.ref }}"

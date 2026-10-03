@@ -1,0 +1,63 @@
+name: Bug report
+description: Report reproducible BeatFlow behavior
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: checkboxes
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: I removed credentials, tokens, codes, cookies, and personal feed data.
+          required: true
+  - type: input
+    attributes:
+      label: BeatFlow version or commit
+      placeholder: 0.1.0 or commit SHA
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Beat Saber package version
+      placeholder: 1.40.8_7379
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Headset
+      options:
+        - Meta Quest 3
+        - Meta Quest 2
+        - Meta Quest 3S
+        - Meta Quest Pro
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Experience
+      options:
+        - Anonymous Up Next
+        - Personalized For You
+        - Download or song selection
+        - Installation or startup
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: Include the starting song and whether it was built-in or custom when relevant.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Sanitized logs
+      description: Do not include OAuth or account data.
+      render: text

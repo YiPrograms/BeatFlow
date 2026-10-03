@@ -1,0 +1,27 @@
+{
+  "docs": [{
+    "id": "316ed",
+    "name": "YOASOBI - Idol",
+    "metadata": {
+      "duration": 214,
+      "songName": "Idol",
+      "songAuthorName": "YOASOBI",
+      "levelAuthorName": "Comyute"
+    },
+    "stats": {"upvotes": 3342, "downvotes": 90, "score": 0.9695},
+    "automapper": false,
+    "declaredAi": "None",
+    "curatedAt": "2023-04-12T14:34:23Z",
+    "versions": [{
+      "hash": "7519cd0ede4f10f86c324228694d7202e3da8630",
+      "state": "Published",
+      "downloadURL": "https://example.test/map.zip",
+      "coverURL": "https://example.test/cover.jpg",
+      "diffs": [
+        {"characteristic": "Standard", "difficulty": "Expert", "nps": 4.717, "ne": false, "me": false, "cinema": false},
+        {"characteristic": "Standard", "difficulty": "ExpertPlus", "nps": 5.529, "requirements": ["Noodle Extensions"]}
+      ]
+    }]
+  }]
+}
+

@@ -1,0 +1,43 @@
+<vertical preferred-width='120' preferred-height='82' child-expand-height='false'
+          xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+          xsi:noNamespaceSchemaLocation='https://raw.githubusercontent.com/RedBrumbler/Quest-BSML-Docs/gh-pages/schema.xsd'>
+  <horizontal preferred-height='8' child-expand-width='false'>
+    <primary-button text='Refresh' on-click='Refresh' pref-width='18'/>
+    <button text='Connect YouTube Music' on-click='Connect' pref-width='34'/>
+    <button text='Disconnect' on-click='Disconnect' pref-width='20'/>
+    <button text='Clear local data' on-click='ClearLocalData' pref-width='24'/>
+    <button text='Cancel' on-click='Cancel' pref-width='15'/>
+  </horizontal>
+  <text id='connectionText' preferred-height='8' font-size='2.7' align='Center'
+        word-wrapping='true' text='A Google account is optional. Connect only for personalized For You.'/>
+  <text id='statusText' preferred-height='7' font-size='3.0' align='Center'
+        word-wrapping='true' text='Loading…'/>
+  <horizontal preferred-height='7' child-expand-width='false'>
+    <button text='Difficulty' on-click='CycleDifficulty' pref-width='22'/>
+    <button text='NPS' on-click='CycleNps' pref-width='16'/>
+    <text id='filterText' pref-width='65' font-size='2.7' align='MidlineLeft'
+          text='All difficulties · Any NPS · Standard'/>
+  </horizontal>
+  <vertical preferred-height='48' spacing='1'>
+    <horizontal preferred-height='15' child-expand-width='false'>
+      <image id='card0Image' preferred-width='14' preferred-height='14' preserve-aspect='true'/>
+      <primary-button id='card0Button' on-click='Select0' pref-width='98'
+                      text='Recommendation' font-size='2.7'/>
+    </horizontal>
+    <horizontal preferred-height='15' child-expand-width='false'>
+      <image id='card1Image' preferred-width='14' preferred-height='14' preserve-aspect='true'/>
+      <primary-button id='card1Button' on-click='Select1' pref-width='98'
+                      text='Recommendation' font-size='2.7'/>
+    </horizontal>
+    <horizontal preferred-height='15' child-expand-width='false'>
+      <image id='card2Image' preferred-width='14' preferred-height='14' preserve-aspect='true'/>
+      <primary-button id='card2Button' on-click='Select2' pref-width='98'
+                      text='Recommendation' font-size='2.7'/>
+    </horizontal>
+  </vertical>
+  <horizontal preferred-height='7' child-expand-width='false'>
+    <button text='Previous' on-click='PreviousPage' pref-width='18'/>
+    <text id='pageText' text='Page 1 / 1' pref-width='25' font-size='2.7' align='Center'/>
+    <button text='Next' on-click='NextPage' pref-width='18'/>
+  </horizontal>
+</vertical>

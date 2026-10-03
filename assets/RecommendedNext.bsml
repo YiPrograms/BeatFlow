@@ -1,0 +1,23 @@
+<vertical preferred-width='54' preferred-height='48' anchor-pos-x='37' anchor-pos-y='0'
+          bg='round-rect-panel' pad='2' child-expand-height='false'
+          xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+          xsi:noNamespaceSchemaLocation='https://raw.githubusercontent.com/RedBrumbler/Quest-BSML-Docs/gh-pages/schema.xsd'>
+  <text id='headingText' text='Up Next' font-size='3.3' align='Center'
+        preferred-height='8' word-wrapping='true'/>
+  <horizontal preferred-height='9' child-expand-width='false'>
+    <image id='item0Image' preferred-width='8' preferred-height='8' preserve-aspect='true'/>
+    <button id='item0Button' on-click='Select0' pref-width='40'
+            text='Recommendation' font-size='2.3'/>
+  </horizontal>
+  <horizontal preferred-height='9' child-expand-width='false'>
+    <image id='item1Image' preferred-width='8' preferred-height='8' preserve-aspect='true'/>
+    <button id='item1Button' on-click='Select1' pref-width='40'
+            text='Recommendation' font-size='2.3'/>
+  </horizontal>
+  <horizontal preferred-height='9' child-expand-width='false'>
+    <image id='item2Image' preferred-width='8' preferred-height='8' preserve-aspect='true'/>
+    <button id='item2Button' on-click='Select2' pref-width='40'
+            text='Recommendation' font-size='2.3'/>
+  </horizontal>
+  <button text='See more' on-click='SeeMore' preferred-height='7'/>
+</vertical>

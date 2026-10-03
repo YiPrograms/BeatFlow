@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  QPM_VERSION: 1.5.11
+
+jobs:
+  portable:
+    name: Portable tests and format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y ninja-build clang-format
+      - name: Configure
+        run: cmake --preset portable-debug
+      - name: Build
+        run: cmake --build --preset portable-debug
+      - name: Test
+        run: ctest --preset portable-debug
+      - name: Check formatting
+        run: scripts/check-format.sh
+
+  quest:
+    name: Pinned Quest build and package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y ninja-build unzip
+      - name: Install QPM
+        run: |
+          curl --fail --location --silent --show-error \
+            --output /tmp/qpm.zip \
+            "https://github.com/QuestPackageManager/QPM.CLI/releases/download/v${QPM_VERSION}/qpm-linux-x64.zip"
+          unzip /tmp/qpm.zip -d /tmp/qpm
+          chmod +x /tmp/qpm/qpm
+          echo /tmp/qpm >> "$GITHUB_PATH"
+      - name: Restore pinned dependencies and NDK
+        run: |
+          qpm restore
+          qpm ndk resolve -d
+      - name: Configure Quest
+        run: cmake --preset quest-release
+      - name: Build Quest
+        run: cmake --build --preset quest-release
+      - name: Package
+        run: python3 scripts/package.py --build-dir build/quest
+      - name: Verify checksums and contents
+        run: |
+          cd dist
+          sha256sum --check SHA256SUMS
+          unzip -t BeatFlow-0.1.0.qmod
+          test "$(unzip -Z1 BeatFlow-0.1.0.qmod | sort | tr '\n' ' ')" = "libBeatFlow.so mod.json "
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BeatFlow-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error

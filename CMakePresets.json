@@ -1,0 +1,53 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "portable-debug",
+      "displayName": "Portable debug build",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/portable-debug",
+      "cacheVariables": {
+        "BEATFLOW_BUILD_QUEST": "OFF",
+        "BEATFLOW_BUILD_TESTS": "ON",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "quest-release",
+      "displayName": "Quest arm64 release build",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/quest",
+      "cacheVariables": {
+        "BEATFLOW_BUILD_QUEST": "ON",
+        "BEATFLOW_BUILD_TESTS": "OFF",
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "portable-debug",
+      "configurePreset": "portable-debug",
+      "jobs": 0
+    },
+    {
+      "name": "quest-release",
+      "configurePreset": "quest-release",
+      "jobs": 0
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "portable-debug",
+      "configurePreset": "portable-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

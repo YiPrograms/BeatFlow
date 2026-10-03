@@ -1,0 +1,26 @@
+{
+  "contents": {
+    "singleColumnMusicWatchNextResultsRenderer": {
+      "tabbedRenderer": {
+        "watchNextTabbedResultsRenderer": {
+          "tabs": [{"tabRenderer": {"content": {"musicQueueRenderer": {"content": {"playlistPanelRenderer": {
+            "contents": [
+              {"playlistPanelVideoRenderer": {
+                "videoId": "current-track",
+                "title": {"runs": [{"text": "Current"}]},
+                "longBylineText": {"runs": [{"text": "Artist", "navigationEndpoint": {"browseEndpoint": {"browseId": "UC1", "browseEndpointContextSupportedConfigs": {"browseEndpointContextMusicConfig": {"pageType": "MUSIC_PAGE_TYPE_ARTIST"}}}}}]},
+                "lengthText": {"runs": [{"text": "3:00"}]}
+              }},
+              {"playlistPanelVideoRenderer": {
+                "videoId": "next-track",
+                "title": {"runs": [{"text": "Next Song"}]},
+                "longBylineText": {"runs": [{"text": "Next Artist", "navigationEndpoint": {"browseEndpoint": {"browseId": "UC2", "browseEndpointContextSupportedConfigs": {"browseEndpointContextMusicConfig": {"pageType": "MUSIC_PAGE_TYPE_ARTIST"}}}}}]},
+                "lengthText": {"runs": [{"text": "4:12"}]}
+              }}
+            ]
+          }}}}}}]
+        }
+      }
+    }
+  }
+}
