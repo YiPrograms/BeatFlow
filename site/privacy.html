@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="BeatFlow privacy policy.">
+  <title>BeatFlow privacy policy</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="shell">
+      <a class="brand" href="./">BeatFlow</a>
+      <nav aria-label="Primary navigation">
+        <a href="index.html">Home</a>
+        <a href="https://github.com/YiPrograms/BeatFlow">Source code</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell">
+    <article>
+      <p class="eyebrow">BeatFlow 0.1</p>
+      <h1>Privacy policy</h1>
+      <p>BeatFlow is an open-source Meta Quest mod with no telemetry, analytics, advertising, crash upload, or project-operated backend.</p>
+
+      <h2>Without a Google account</h2>
+      <p>Up Next sends the current song’s title and artist to YouTube Music’s anonymous InnerTube search and next endpoints, then sends candidate track metadata to BeatSaver search. These services receive normal network information such as the headset’s IP address. BeatFlow stores bounded response caches locally.</p>
+
+      <h2>Optional Google connection</h2>
+      <p>Sign in with Google uses a device authorization flow and the YouTube scope to request personalized Home recommendations. Access and refresh tokens are encrypted on the headset with Android Keystore. BeatFlow never receives the player’s Google password and has no server that receives or stores tokens.</p>
+
+      <h2>Local data and deletion</h2>
+      <p>BeatFlow stores encrypted tokens, settings, bounded recommendation caches, and incomplete download staging files under its mod-data directory. Disconnect removes tokens and personalized caches. Clear local data also removes anonymous caches and staging files. Downloaded custom songs remain in SongCore until removed separately.</p>
+
+      <h2>Third parties</h2>
+      <p>BeatFlow sends requests directly from the headset to Google/YouTube and BeatSaver. YouTube Music’s InnerTube interface is unofficial and may change. Please review <a href="https://policies.google.com/privacy">Google’s privacy policy</a> and <a href="https://beatsaver.com/">BeatSaver</a>’s terms for those services.</p>
+
+      <h2>Open source</h2>
+      <p>The source code, issue tracker, and release history are available in the <a href="https://github.com/YiPrograms/BeatFlow">BeatFlow repository</a>. Questions about this policy can be raised there.</p>
+    </article>
+  </main>
+
+  <footer>
+    <div class="shell"><a href="index.html">Back to BeatFlow</a></div>
+  </footer>
+</body>
+</html>

@@ -87,6 +87,11 @@ Release maintainers inject that client at build time; its metadata is part of th
 each player's access and refresh tokens are encrypted separately with Android Keystore. Self-build
 instructions are in [Development](docs/DEVELOPMENT.md).
 
+The public OAuth app homepage is [beatflow.yikuo.dev](https://beatflow.yikuo.dev/) and its privacy
+policy is [available here](https://beatflow.yikuo.dev/privacy.html). These pages contain no login form
+and do not collect BeatFlow data; they provide the public project information Google shows during
+authorization.
+
 ## Use BeatFlow
 
 ### Up Next
