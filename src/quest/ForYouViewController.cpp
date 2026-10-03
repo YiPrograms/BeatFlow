@@ -120,6 +120,10 @@ void ForYouViewController::Connect() {
 }
 
 void ForYouViewController::OpenBrowser() {
+    if (!authorizationUrl) {
+        setText(connectionText, "Select Sign in with Google first.");
+        return;
+    }
     const std::string url = authorizationUrl;
     if (url.empty()) {
         setText(connectionText, "Select Sign in with Google first.");

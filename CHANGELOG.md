@@ -19,6 +19,11 @@ All notable changes to BeatFlow are documented here. The project follows
 - Bounded workers, cancellation generations, retry/backoff, and versioned offline caches.
 - Portable fixture tests, pinned Quest build, deterministic QMOD packaging, and open-source docs.
 
+### Fixed
+
+- Load Quest's system certificate store for verified HTTPS requests from the bundled libcurl client.
+- Keep the Browser action safe when device authorization has not produced a URL.
+
 ## [0.1.0] - Unreleased developer preview
 
 Quest 3 hardware acceptance remains pending.

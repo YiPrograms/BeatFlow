@@ -5,11 +5,48 @@
 #include "libcurl/shared/curl.h"
 
 #include <array>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <limits>
 #include <string>
 
 namespace beatflow::quest {
 namespace {
+
+constexpr auto kAndroidCaPath = "/system/etc/security/cacerts";
+
+std::string loadAndroidCaBundle() {
+    std::error_code error;
+    std::filesystem::directory_iterator certificates(kAndroidCaPath, error);
+    if (error) {
+        return {};
+    }
+
+    std::string bundle;
+    for (const auto& entry : certificates) {
+        if (!entry.is_regular_file(error)) {
+            error.clear();
+            continue;
+        }
+        std::ifstream certificate(entry.path(), std::ios::binary);
+        if (!certificate) {
+            continue;
+        }
+        bundle.append(std::istreambuf_iterator<char>(certificate), std::istreambuf_iterator<char>());
+        if (!bundle.empty() && bundle.back() != '\n') {
+            bundle.push_back('\n');
+        }
+    }
+    return bundle;
+}
+
+const std::string& androidCaBundle() {
+    // QPM's libcurl has no default CA bundle. Reading Quest's platform trust store
+    // once keeps verification enabled and follows certificate updates from the OS.
+    static const auto bundle = loadAndroidCaBundle();
+    return bundle;
+}
 
 class CurlHandle {
   public:
@@ -104,6 +141,13 @@ Outcome<HttpResponse> QuestHttpClient::send(const HttpRequest& request,
     std::string body;
     std::string rawHeaders;
     std::array<char, CURL_ERROR_SIZE> errorDetails{};
+    const auto& caBundle = androidCaBundle();
+    if (caBundle.empty()) {
+        return Outcome<HttpResponse>::failure({ErrorCode::Internal,
+                                               "BeatFlow could not load the system certificate store.", true,
+                                               std::nullopt});
+    }
+    curl_blob caInfo{const_cast<char*>(caBundle.data()), caBundle.size(), CURL_BLOB_NOCOPY};
     curl_easy_setopt(curl.get(), CURLOPT_URL, request.url.c_str());
     curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, headers.get());
     curl_easy_setopt(curl.get(), CURLOPT_FOLLOWLOCATION, 1L);
@@ -112,6 +156,7 @@ Outcome<HttpResponse> QuestHttpClient::send(const HttpRequest& request,
     curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT, static_cast<long>(request.timeoutSeconds));
     curl_easy_setopt(curl.get(), CURLOPT_SSL_VERIFYPEER, 1L);
     curl_easy_setopt(curl.get(), CURLOPT_SSL_VERIFYHOST, 2L);
+    curl_easy_setopt(curl.get(), CURLOPT_CAINFO_BLOB, &caInfo);
     curl_easy_setopt(curl.get(), CURLOPT_ACCEPT_ENCODING, "");
     curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, appendBytes);
     curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &body);
