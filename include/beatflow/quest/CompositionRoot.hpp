@@ -67,6 +67,10 @@ class CompositionRoot {
 
     [[nodiscard]] RecommendationFilters filters() const;
     void setFilters(RecommendationFilters filters);
+    [[nodiscard]] bool showNextOnResults() const;
+    [[nodiscard]] bool showNextOnPause() const;
+    void setShowNextOnResults(bool value);
+    void setShowNextOnPause(bool value);
 
   private:
     CompositionRoot();
@@ -75,6 +79,8 @@ class CompositionRoot {
     CompositionRoot& operator=(const CompositionRoot&) = delete;
 
     [[nodiscard]] RecommendationRequest request(std::size_t maximumResults) const;
+    void loadDisplaySettings();
+    void saveDisplaySettings() const;
     static void dispatch(std::function<void()> callback);
 
     std::filesystem::path dataRoot_;
@@ -101,6 +107,8 @@ class CompositionRoot {
     std::shared_ptr<CancellationSource> prefetchCancellation_;
     std::uint64_t interactiveGeneration_{0};
     std::uint64_t prefetchGeneration_{0};
+    bool showNextOnResults_{true};
+    bool showNextOnPause_{true};
     bool initialized_{false};
 };
 

@@ -14,13 +14,6 @@
     }
   },
   "workspace": {
-    "ndk": "27.3.13750724",
-    "qmodIncludeDirs": [
-      "./build/quest",
-      "./extern/libs"
-    ],
-    "qmodIncludeFiles": [],
-    "qmodOutput": "BeatFlow.qmod",
     "scripts": {
       "build": [
         "cmake --preset quest-release",
@@ -32,17 +25,24 @@
       "qmod": [
         "python3 scripts/package.py --build-dir build/quest"
       ]
-    }
+    },
+    "ndk": "=27.3.13750724",
+    "qmodIncludeDirs": [
+      "./build/quest",
+      "./extern/libs"
+    ],
+    "qmodIncludeFiles": [],
+    "qmodOutput": "BeatFlow.qmod"
   },
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "6.4.2",
+      "versionRange": "=6.4.2",
       "additionalData": {}
     },
     {
       "id": "beatsaverplusplus",
-      "versionRange": "0.2.3",
+      "versionRange": "=0.2.3",
       "additionalData": {}
     },
     {
@@ -52,39 +52,46 @@
     },
     {
       "id": "bsml",
-      "versionRange": "0.4.55",
+      "versionRange": "=0.4.55",
       "additionalData": {}
     },
     {
       "id": "config-utils",
-      "versionRange": "2.0.3",
+      "versionRange": "=2.0.3",
       "additionalData": {}
     },
     {
       "id": "custom-types",
-      "versionRange": "0.18.4",
+      "versionRange": "=0.18.4",
       "additionalData": {}
     },
     {
       "id": "fmt",
-      "versionRange": "11.0.2",
+      "versionRange": "=11.0.2",
       "additionalData": {}
     },
     {
       "id": "kaleb",
-      "versionRange": "0.1.9",
+      "versionRange": "=0.1.9",
+      "additionalData": {
+        "private": true
+      }
+    },
+    {
+      "id": "libcurl",
+      "versionRange": "=8.5.0",
       "additionalData": {
         "private": true
       }
     },
     {
       "id": "paper2_scotland2",
-      "versionRange": "4.8.0",
+      "versionRange": "=4.8.0",
       "additionalData": {}
     },
     {
       "id": "scotland2",
-      "versionRange": "0.1.6",
+      "versionRange": "=0.1.6",
       "additionalData": {
         "includeQmod": false,
         "private": true
@@ -92,12 +99,12 @@
     },
     {
       "id": "songcore",
-      "versionRange": "1.1.25",
+      "versionRange": "=1.1.25",
       "additionalData": {}
     },
     {
       "id": "web-utils",
-      "versionRange": "0.6.9",
+      "versionRange": "=0.6.9",
       "additionalData": {}
     }
   ]

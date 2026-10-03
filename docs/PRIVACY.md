@@ -28,6 +28,7 @@ BeatFlow uses this directory:
 /sdcard/ModData/com.beatgames.beatsaber/Mods/BeatFlow/
 ├── oauth_client.enc       encrypted imported client credentials
 ├── oauth_tokens.enc       encrypted access and refresh tokens
+├── settings.json          Up Next display preferences
 ├── cache/maps/            bounded BeatSaver response cache
 ├── cache/music/           bounded anonymous InnerTube response cache
 ├── cache/accounts/        bounded personalized response cache

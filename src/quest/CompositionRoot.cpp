@@ -6,9 +6,12 @@
 #include "bsml/shared/BSML/MainThreadScheduler.hpp"
 #include "songcore/shared/SongCore.hpp"
 
+#include <nlohmann/json.hpp>
+
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <fstream>
 #include <thread>
 
 namespace beatflow::quest {
@@ -68,14 +71,17 @@ CompositionRoot::~CompositionRoot() {
 }
 
 void CompositionRoot::initialize() {
-    std::scoped_lock lock(stateMutex_);
-    if (initialized_) {
-        return;
+    {
+        std::scoped_lock lock(stateMutex_);
+        if (initialized_) {
+            return;
+        }
+        initialized_ = true;
     }
     std::error_code ignored;
     std::filesystem::create_directories(dataRoot_, ignored);
+    loadDisplaySettings();
     BeatSaver::API::Init(SongCore::API::Loading::GetPreferredCustomLevelPath());
-    initialized_ = true;
 }
 
 void CompositionRoot::shutdown() {
@@ -415,6 +421,76 @@ RecommendationFilters CompositionRoot::filters() const {
 void CompositionRoot::setFilters(RecommendationFilters filters) {
     std::scoped_lock lock(stateMutex_);
     filters_ = std::move(filters);
+}
+
+bool CompositionRoot::showNextOnResults() const {
+    std::scoped_lock lock(stateMutex_);
+    return showNextOnResults_;
+}
+
+bool CompositionRoot::showNextOnPause() const {
+    std::scoped_lock lock(stateMutex_);
+    return showNextOnPause_;
+}
+
+void CompositionRoot::setShowNextOnResults(bool value) {
+    {
+        std::scoped_lock lock(stateMutex_);
+        showNextOnResults_ = value;
+    }
+    saveDisplaySettings();
+}
+
+void CompositionRoot::setShowNextOnPause(bool value) {
+    {
+        std::scoped_lock lock(stateMutex_);
+        showNextOnPause_ = value;
+    }
+    saveDisplaySettings();
+}
+
+void CompositionRoot::loadDisplaySettings() {
+    const auto path = dataRoot_ / "settings.json";
+    std::ifstream input(path);
+    if (!input) {
+        return;
+    }
+    try {
+        const auto value = nlohmann::json::parse(input);
+        std::scoped_lock lock(stateMutex_);
+        showNextOnResults_ = value.value("showUpNextOnSongEnd", true);
+        showNextOnPause_ = value.value("showUpNextOnPause", true);
+    } catch (...) {
+        // Invalid settings are ignored so the safe defaults remain available.
+    }
+}
+
+void CompositionRoot::saveDisplaySettings() const {
+    bool onResults = true;
+    bool onPause = true;
+    {
+        std::scoped_lock lock(stateMutex_);
+        onResults = showNextOnResults_;
+        onPause = showNextOnPause_;
+    }
+    const auto path = dataRoot_ / "settings.json";
+    const auto temporary = dataRoot_ / "settings.json.tmp";
+    std::ofstream output(temporary, std::ios::trunc);
+    if (!output) {
+        return;
+    }
+    output << nlohmann::json{{"showUpNextOnSongEnd", onResults}, {"showUpNextOnPause", onPause}}.dump(2);
+    output.close();
+    if (!output) {
+        return;
+    }
+    std::error_code error;
+    std::filesystem::rename(temporary, path, error);
+    if (error) {
+        std::filesystem::remove(path, error);
+        error.clear();
+        std::filesystem::rename(temporary, path, error);
+    }
 }
 
 RecommendationRequest CompositionRoot::request(std::size_t maximumResults) const {

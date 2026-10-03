@@ -8,10 +8,12 @@
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
 #include "bsml/shared/BSML.hpp"
 #include "bsml/shared/BSML/MainThreadScheduler.hpp"
+#include "bsml/shared/Helpers/getters.hpp"
 #include "bsml/shared/Helpers/utilities.hpp"
 
 #include <array>
 #include <cmath>
+#include <functional>
 
 DEFINE_TYPE(beatflow::quest, RecommendedNextPanel);
 
@@ -29,6 +31,23 @@ std::string label(const RecommendedMap& recommendation) {
         recommendation.track.artists.empty() ? "Unknown artist" : recommendation.track.artists.front();
     return "<b>" + recommendation.track.title + "</b>\n" + artist + " · " + recommendation.map.mapper +
            " · " + std::to_string(static_cast<int>(std::round(recommendation.map.rating * 100.0))) + "%";
+}
+
+void afterResultsClose(GlobalNamespace::ResultsViewController* results, std::function<void()> action) {
+    SafePtrUnity<GlobalNamespace::ResultsViewController> closingResults(results);
+    if (results != nullptr) {
+        results->ContinueButtonPressed();
+    }
+    BSML::MainThreadScheduler::ScheduleNextFrame([closingResults, action = std::move(action)]() mutable {
+        BSML::MainThreadScheduler::ScheduleUntil(
+            [closingResults] {
+                auto current = BSML::Helpers::GetMainFlowCoordinator()->YoungestChildFlowCoordinatorOrSelf();
+                const bool resultsClosed = !closingResults || !closingResults.ptr()->get_isActiveAndEnabled();
+                return resultsClosed && current != nullptr && current->get_isActivated() &&
+                       !current->get_isInTransition();
+            },
+            std::move(action));
+    });
 }
 
 } // namespace
@@ -107,10 +126,7 @@ void RecommendedNextPanel::select(std::size_t index) {
                 return;
             }
             const auto hash = std::move(prepared).value();
-            if (resultsView != nullptr) {
-                resultsView->ContinueButtonPressed();
-            }
-            BSML::MainThreadScheduler::Schedule([hash] {
+            afterResultsClose(resultsView, [hash] {
                 const auto opened = CompositionRoot::instance().openPrepared(hash);
                 static_cast<void>(opened);
             });
@@ -119,10 +135,7 @@ void RecommendedNextPanel::select(std::size_t index) {
 
 void RecommendedNextPanel::SeeMore() {
     CompositionRoot::instance().browseNextRecommendations();
-    if (resultsView != nullptr) {
-        resultsView->ContinueButtonPressed();
-    }
-    BSML::MainThreadScheduler::Schedule([] { ui::showRecommendedNext(); });
+    afterResultsClose(resultsView, [] { ui::showRecommendedNext(); });
 }
 
 } // namespace beatflow::quest

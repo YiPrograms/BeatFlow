@@ -14,6 +14,12 @@
   <text id='statusText' preferred-height='7' font-size='3.0' align='Center'
         word-wrapping='true' text='Loading…'/>
   <horizontal preferred-height='7' child-expand-width='false'>
+    <toggle-setting text='Show Up Next after song' value='showOnSongEnd' bind-value='true'
+                    apply-on-change='true' pref-width='48'/>
+    <toggle-setting text='Show Up Next on pause' value='showOnPause' bind-value='true'
+                    apply-on-change='true' pref-width='48'/>
+  </horizontal>
+  <horizontal preferred-height='7' child-expand-width='false'>
     <button text='Difficulty' on-click='CycleDifficulty' pref-width='22'/>
     <button text='NPS' on-click='CycleNps' pref-width='16'/>
     <text id='filterText' pref-width='65' font-size='2.7' align='MidlineLeft'

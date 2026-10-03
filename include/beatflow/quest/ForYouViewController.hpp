@@ -6,6 +6,7 @@
 #include "TMPro/TextMeshProUGUI.hpp"
 #include "UnityEngine/UI/Button.hpp"
 #include "UnityEngine/UI/Image.hpp"
+#include "bsml/shared/macros.hpp"
 
 DECLARE_CLASS_CODEGEN(beatflow::quest, ForYouViewController, HMUI::ViewController) {
     DECLARE_CTOR(ctor);
@@ -27,6 +28,8 @@ DECLARE_CLASS_CODEGEN(beatflow::quest, ForYouViewController, HMUI::ViewControlle
     DECLARE_INSTANCE_FIELD(int32_t, page);
     DECLARE_INSTANCE_FIELD(int32_t, difficultyMode);
     DECLARE_INSTANCE_FIELD(int32_t, npsMode);
+    DECLARE_BSML_PROPERTY(bool, showOnSongEnd);
+    DECLARE_BSML_PROPERTY(bool, showOnPause);
 
     DECLARE_INSTANCE_METHOD(void, Refresh);
     DECLARE_INSTANCE_METHOD(void, Connect);

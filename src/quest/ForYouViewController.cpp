@@ -177,6 +177,22 @@ void ForYouViewController::CycleNps() {
     Refresh();
 }
 
+bool ForYouViewController::get_showOnSongEnd() {
+    return CompositionRoot::instance().showNextOnResults();
+}
+
+void ForYouViewController::set_showOnSongEnd(bool value) {
+    CompositionRoot::instance().setShowNextOnResults(value);
+}
+
+bool ForYouViewController::get_showOnPause() {
+    return CompositionRoot::instance().showNextOnPause();
+}
+
+void ForYouViewController::set_showOnPause(bool value) {
+    CompositionRoot::instance().setShowNextOnPause(value);
+}
+
 void ForYouViewController::Select0() {
     select(0);
 }

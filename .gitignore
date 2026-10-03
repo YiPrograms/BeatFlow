@@ -5,7 +5,6 @@ out/
 extern/
 shared/
 QPM_Temp/
-qpm.shared.json
 qpm_defines.cmake
 extern.cmake
 ndkpath.txt

@@ -12,6 +12,8 @@ Quest projects; their own licenses and notices apply:
 - [Quest SongCore](https://github.com/raineaeternal/Quest-SongCore)
 - [WebUtils](https://github.com/bsq-ports/WebUtils)
 - [nlohmann/json](https://github.com/nlohmann/json)
+- [curl and OpenSSL for Android](https://github.com/darknight1050/openssl-curl-android), statically
+  linked for BeatFlow's request transport
 
 [BetterSongSearchQuest](https://github.com/bsq-ports/BetterSongSearchQuest) informed the compatible
 Beat Saber `1.40.8` dependency pins. [ytmusicapi](https://github.com/sigma67/ytmusicapi) documentation

@@ -2,7 +2,7 @@
 
 BeatFlow turns the song you just played into the next Beat Saber map. It resolves the current song
 through YouTube Music's anonymous InnerTube interface, follows its radio queue, finds confident
-BeatSaver matches, and puts up to three choices beside the solo results screen.
+BeatSaver matches, and shows the choices on the solo pause and results screens.
 
 **A Google account is not required for Up Next.** Connecting YouTube Music is optional and adds the
 personalized **For You** feed using your Home recommendations, listening history, likes, and library
@@ -16,11 +16,12 @@ signals.
 ## What playing with BeatFlow feels like
 
 1. Start any solo song. BeatFlow resolves its title, artist, and duration in the background.
-2. Finish the song normally. The results buttons remain usable immediately.
-3. Choose one of up to three **Up Next** maps, or open **See more**.
-4. BeatFlow downloads and validates the map when needed, refreshes SongCore, and opens Beat Saber's
+2. Pause to glance at the prefetched Up Next list without leaving the level.
+3. Finish the song normally. The results buttons remain usable immediately.
+4. Choose one of up to three **Up Next** maps, or open **See more**.
+5. BeatFlow downloads and validates the map when needed, refreshes SongCore, and opens Beat Saber's
    normal song detail screen. You choose the difficulty and press Play.
-5. Finish the next song and continue the chain.
+6. Finish the next song and continue the chain.
 
 From the Mods menu, **BeatFlow** opens **For You**. Connect YouTube Music there to browse personalized
 recommendations. Results appear progressively and show artwork, song, artist, mapper, rating,
@@ -103,13 +104,18 @@ in a QMOD, or share it in a bug report.
 
 Up Next works without an account for built-in and custom solo levels that expose enough song metadata.
 BeatFlow prefetches metadata after the level starts and does no synchronous network or disk work on the
-gameplay thread. The shelf appears only after a successful finish; it does not appear after a fail,
-quit, or multiplayer game.
+gameplay thread. The pause panel is read-only, uses text instead of decoding artwork during play, and
+never starts a map installation. The results shelf appears only after a successful finish; it does not
+appear after a fail, quit, or multiplayer game.
 
 Selecting a result downloads it if needed. Archives are checked for unsafe paths, bounded size, and
 Beat Saber metadata, then extracted into staging and moved into the SongCore folder as one final step.
 If resolution fails, the results panel explains why; **See more** still opens BeatFlow, where For You is
 available after connecting an account.
+
+The BeatFlow page has independent **Show Up Next after song** and **Show Up Next on pause** options.
+Both are enabled by default and saved locally. Turning off the pause option takes effect for the next
+level; the results option takes effect on the next successful finish.
 
 ### For You and filters
 

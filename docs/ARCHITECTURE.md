@@ -53,9 +53,10 @@ credentials, providers, recommendation engine, SongCore adapter, worker queue, c
 and per-session played hashes. Other Quest classes request operations from this root; they do not find
 services through a general registry.
 
-`LevelLifecycle` hooks solo level startup and successful results activation. Startup submits anonymous
-metadata prefetch. The results hook adds a small `RecommendedNextPanel` without delaying or replacing
-Beat Saber's controls. The menu flow uses `ForYouViewController` for personalized and expanded results.
+`LevelLifecycle` hooks solo level startup, pause presentation, and successful results activation.
+Startup submits anonymous metadata prefetch. The pause hook adds a read-only, text-only panel and the
+results hook adds an interactive `RecommendedNextPanel`; neither replaces Beat Saber's controls. The
+menu flow uses `ForYouViewController` for personalized and expanded results.
 
 `QuestSongLibrary` validates a downloaded ZIP, extracts into a unique staging directory, checks the
 resulting tree and `Info.dat`, and renames the completed directory into SongCore's custom-level folder.

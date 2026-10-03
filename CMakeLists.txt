@@ -83,6 +83,7 @@ if(BEATFLOW_BUILD_QUEST OR ANDROID)
         src/quest/CompositionRoot.cpp
         src/quest/ForYouViewController.cpp
         src/quest/LevelLifecycle.cpp
+        src/quest/PauseRecommendedNextPanel.cpp
         src/quest/QuestHttpClient.cpp
         src/quest/QuestCredentialStore.cpp
         src/quest/QuestSongLibrary.cpp

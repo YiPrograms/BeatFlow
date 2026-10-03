@@ -34,21 +34,23 @@ Use a clean Beat Saber `1.40.8_7379` installation and record the game version, h
 QMOD checksum, and dependency versions.
 
 1. Install BeatFlow and its declared dependencies; launch and open its Mods menu entry.
-2. Without credentials, play a built-in song and a custom song, finish each, and verify Up Next appears.
-3. Select an uninstalled recommendation, verify progress, choose a difficulty on the normal details
+2. Without credentials, play a built-in song and a custom song. Pause each and verify the read-only Up
+   Next panel appears, then finish and verify the interactive Up Next shelf appears.
+3. Toggle each Up Next display option independently and verify it affects only its named surface.
+4. Select an uninstalled recommendation, verify progress, choose a difficulty on the normal details
    screen, play it, finish, and continue for several rounds.
-4. Fail a song, quit a song, and play multiplayer. Confirm no shelf appears and normal navigation works.
-5. Add personal client credentials, connect with the device URL and code, and verify expiry, cancel,
+5. Fail a song, quit a song, and play multiplayer. Confirm no shelf appears and normal navigation works.
+6. Add personal client credentials, connect with the device URL and code, and verify expiry, cancel,
    token refresh, reconnect, Disconnect, and Clear local data.
-6. Browse For You, change every difficulty and NPS filter, select installed and uninstalled maps, and
+7. Browse For You, change every difficulty and NPS filter, select installed and uninstalled maps, and
    verify loading, empty, filtered, offline, cached, retry, and malformed-response states.
-7. Interrupt a download and restart Beat Saber. Confirm there is no partial song and a retry succeeds.
-8. Switch scenes, close the view during requests, replay a level, and chain recommendations. Confirm no
+8. Interrupt a download and restart Beat Saber. Confirm there is no partial song and a retry succeeds.
+9. Switch scenes, close the view during requests, replay a level, and chain recommendations. Confirm no
    stale callback changes the current screen.
-9. Compare the same map with prefetch enabled and disabled. Capture frame times and memory across
+10. Compare the same map with prefetch enabled and disabled. Capture frame times and memory across
    repeated rounds; require no synchronous gameplay-thread network/disk work, sustained frame-time
    regression, or growing memory.
-10. Capture real screenshots only after the corresponding screen and behavior pass.
+11. Capture real screenshots only after the corresponding screen and behavior pass.
 
 Quest 2, 3S, and Pro remain unverified until this same loop is recorded on each model.
 
