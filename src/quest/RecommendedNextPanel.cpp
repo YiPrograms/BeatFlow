@@ -82,6 +82,10 @@ void RecommendedNextPanel::render() {
     } else if (state.recommendations.empty() && !state.loading) {
         setText(headingText, "Up Next · no confident map matches");
     }
+    if (seeMoreButton != nullptr) {
+        setText(seeMoreButton->GetComponentInChildren<TMPro::TextMeshProUGUI*>(),
+                state.error ? "Open For You" : "See more");
+    }
 
     const std::array<UnityEngine::UI::Button*, 3> buttons{item0Button, item1Button, item2Button};
     const std::array<UnityEngine::UI::Image*, 3> images{item0Image, item1Image, item2Image};
@@ -134,8 +138,13 @@ void RecommendedNextPanel::select(std::size_t index) {
 }
 
 void RecommendedNextPanel::SeeMore() {
-    CompositionRoot::instance().browseNextRecommendations();
-    afterResultsClose(resultsView, [] { ui::showRecommendedNext(); });
+    if (CompositionRoot::instance().nextState().error) {
+        CompositionRoot::instance().browseForYouRecommendations();
+        afterResultsClose(resultsView, [] { ui::showForYou(); });
+    } else {
+        CompositionRoot::instance().browseNextRecommendations();
+        afterResultsClose(resultsView, [] { ui::showRecommendedNext(); });
+    }
 }
 
 } // namespace beatflow::quest

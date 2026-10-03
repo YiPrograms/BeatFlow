@@ -13,14 +13,20 @@ class FakeMusicProvider final : public MusicProvider {
     std::vector<Track> homeTracks;
     std::vector<Track> radioTracks;
     std::vector<Track> searchTracks;
+    std::map<std::string, std::vector<Track>> searchTracksByQuery;
     std::string lastRadioTrackId;
     std::string lastSearchQuery;
+    std::vector<std::string> searchQueries;
 
     Outcome<std::vector<Track>> home(const CancellationToken&) override {
         return Outcome<std::vector<Track>>::success(homeTracks);
     }
     Outcome<std::vector<Track>> search(const std::string& query, const CancellationToken&) override {
         lastSearchQuery = query;
+        searchQueries.push_back(query);
+        if (const auto found = searchTracksByQuery.find(query); found != searchTracksByQuery.end()) {
+            return Outcome<std::vector<Track>>::success(found->second);
+        }
         return Outcome<std::vector<Track>>::success(searchTracks);
     }
     Outcome<std::vector<Track>> radio(const std::string& trackId, const CancellationToken&) override {
@@ -144,6 +150,40 @@ BF_TEST("short map edit can use the matching original recording as a radio seed"
 
     BF_REQUIRE(result.ok());
     BF_REQUIRE(result.value().providerId == "right");
+    BF_REQUIRE(music.searchQueries.size() == 2);
+    BF_REQUIRE(music.searchQueries.back() == "ZUTOMAYO Time Left");
+}
+
+BF_TEST("short map edit runs a broader search for the official full recording") {
+    FakeMusicProvider music;
+    FakeMapCatalog maps;
+    music.searchTracksByQuery["ZUTOMAYO Time Left (TV Size)"] = {
+        {"edit", "Time Left (TV Size)", {"Different Artist"}, 91, "", "", 1.0}};
+    music.searchTracksByQuery["ZUTOMAYO Time Left"] = {
+        {"official", "残機 - Time Left", {"ZUTOMAYO"}, 181, "", "", 1.0}};
+    RecommendationEngine engine(music, maps, nullptr);
+    CancellationSource cancellation;
+
+    const auto result = engine.resolveTrack("Time Left (TV Size)", "ZUTOMAYO", 91, cancellation.token());
+
+    BF_REQUIRE(result.ok());
+    BF_REQUIRE(result.value().providerId == "official");
+    BF_REQUIRE(music.searchQueries.size() == 2);
+}
+
+BF_TEST("radio seed uses the provider's best result when strict identity is unavailable") {
+    FakeMusicProvider music;
+    FakeMapCatalog maps;
+    music.searchTracks = {{"best", "Official English Title", {"Official Artist"}, 210, "", "", 1.0},
+                          {"second", "Unrelated Result", {"Other Artist"}, 180, "", "", 0.8}};
+    RecommendationEngine engine(music, maps, nullptr);
+    CancellationSource cancellation;
+
+    const auto result =
+        engine.resolveTrack("Localized Map Title", "Official Artist", 205, cancellation.token());
+
+    BF_REQUIRE(result.ok());
+    BF_REQUIRE(result.value().providerId == "best");
 }
 
 BF_TEST("Up Next resolves the current song then matches its radio recommendations") {

@@ -60,6 +60,7 @@ class CompositionRoot {
     void prefetchForLevel(GlobalNamespace::BeatmapLevel* level);
     [[nodiscard]] RecommendationViewState nextState() const;
     [[nodiscard]] RecommendationViewState browseState() const;
+    void browseForYouRecommendations();
     void browseNextRecommendations();
 
     void prepare(const RecommendedMap& recommendation, PrepareCallback callback);
@@ -103,6 +104,8 @@ class CompositionRoot {
     RecommendationViewState forYouState_;
     RecommendationViewState nextState_;
     RecommendationViewState browseState_;
+    enum class BrowseMode { ForYou, Next };
+    BrowseMode browseMode_{BrowseMode::ForYou};
     RecommendationFilters filters_;
     std::set<std::string> playedHashes_;
     std::shared_ptr<CancellationSource> interactiveCancellation_;

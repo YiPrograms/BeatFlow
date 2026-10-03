@@ -1,6 +1,7 @@
 #include "beatflow/quest/CompositionRoot.hpp"
 
 #include "beatflow/quest/BuildConfig.hpp"
+#include "beatflow/quest/Logger.hpp"
 
 #include "GlobalNamespace/BeatmapLevel.hpp"
 #include "beatsaber-hook/shared/utils/il2cpp-functions.hpp"
@@ -111,6 +112,8 @@ void CompositionRoot::refreshForYou(RecommendationFilters filters, Recommendatio
         generation = ++interactiveGeneration_;
         filters_ = std::move(filters);
         forYouState_ = {{}, std::nullopt, "Personalized For You", true, false};
+        browseState_ = forYouState_;
+        browseMode_ = BrowseMode::ForYou;
     }
     dispatch([callback] { callback({{}, std::nullopt, "Personalized For You", true, false}); });
 
@@ -134,7 +137,9 @@ void CompositionRoot::refreshForYou(RecommendationFilters filters, Recommendatio
                                 return;
                             }
                             forYouState_ = snapshot;
-                            browseState_ = snapshot;
+                            if (browseMode_ == BrowseMode::ForYou) {
+                                browseState_ = snapshot;
+                            }
                         }
                         callback(snapshot);
                     });
@@ -157,7 +162,9 @@ void CompositionRoot::refreshForYou(RecommendationFilters filters, Recommendatio
                         return;
                     }
                     forYouState_ = finished;
-                    browseState_ = finished;
+                    if (browseMode_ == BrowseMode::ForYou) {
+                        browseState_ = finished;
+                    }
                 }
                 callback(finished);
             });
@@ -276,7 +283,9 @@ Outcome<bool> CompositionRoot::disconnect() {
     if (cache) {
         std::scoped_lock lock(stateMutex_);
         forYouState_ = {};
-        browseState_ = {};
+        if (browseMode_ == BrowseMode::ForYou) {
+            browseState_ = {};
+        }
     }
     return cache;
 }
@@ -337,6 +346,9 @@ void CompositionRoot::prefetchForLevel(GlobalNamespace::BeatmapLevel* level) {
         cancellation = prefetchCancellation_;
         generation = ++prefetchGeneration_;
         nextState_ = {{}, std::nullopt, "After " + title, true, false};
+        if (browseMode_ == BrowseMode::Next) {
+            browseState_ = nextState_;
+        }
     }
 
     const bool queued = workers_.submit(bindIl2Cpp([this, cancellation, generation, title, artist, duration] {
@@ -352,7 +364,15 @@ void CompositionRoot::prefetchForLevel(GlobalNamespace::BeatmapLevel* level) {
         }
         std::scoped_lock lock(stateMutex_);
         if (cancellation == prefetchCancellation_ && generation == prefetchGeneration_) {
-            nextState_ = std::move(state);
+            if (state.error) {
+                logger.warn("Up Next prefetch failed: {}", state.error->message);
+            } else {
+                logger.info("Up Next prefetch found {} playable maps", state.recommendations.size());
+            }
+            nextState_ = state;
+            if (browseMode_ == BrowseMode::Next) {
+                browseState_ = std::move(state);
+            }
         }
     }));
     if (!queued) {
@@ -376,8 +396,15 @@ RecommendationViewState CompositionRoot::browseState() const {
     return browseState_;
 }
 
+void CompositionRoot::browseForYouRecommendations() {
+    std::scoped_lock lock(stateMutex_);
+    browseMode_ = BrowseMode::ForYou;
+    browseState_ = forYouState_;
+}
+
 void CompositionRoot::browseNextRecommendations() {
     std::scoped_lock lock(stateMutex_);
+    browseMode_ = BrowseMode::Next;
     browseState_ = nextState_;
 }
 
@@ -395,6 +422,8 @@ void CompositionRoot::prepare(const RecommendedMap& recommendation, PrepareCallb
                 auto installed = library_.install(recommendation.map, cancellation->token());
                 if (installed) {
                     SongCore::API::Loading::RefreshSongs(false).wait();
+                } else {
+                    logger.warn("Map installation failed: {}", installed.error().message);
                 }
                 dispatch([callback, installed = std::move(installed)]() mutable {
                     callback(std::move(installed));

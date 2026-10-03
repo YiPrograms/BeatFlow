@@ -44,6 +44,8 @@ void show(bool showNext) {
     nextMode = showNext;
     if (showNext) {
         CompositionRoot::instance().browseNextRecommendations();
+    } else {
+        CompositionRoot::instance().browseForYouRecommendations();
     }
     if (!flow) {
         flow = BSML::Helpers::CreateFlowCoordinator<BeatFlowFlowCoordinator*>();

@@ -1,7 +1,6 @@
 #include "beatflow/quest/QuestSongLibrary.hpp"
 
-#include "beatflow/quest/Logger.hpp"
-#include "beatflow/services/ZipArchiveValidator.hpp"
+#include "beatflow/services/ZipArchiveExtractor.hpp"
 
 #include "GlobalNamespace/BeatmapLevel.hpp"
 #include "GlobalNamespace/BeatmapLevelPack.hpp"
@@ -11,12 +10,10 @@
 #include "HMUI/NoTransitionsButton.hpp"
 #include "System/Nullable_1.hpp"
 #include "UnityEngine/GameObject.hpp"
-#include "beatsaverplusplus/shared/BeatSaver.hpp"
 #include "bsml/shared/Helpers/getters.hpp"
 #include "songcore/shared/SongCore.hpp"
 
 #include <algorithm>
-#include <fstream>
 #include <span>
 
 namespace beatflow::quest {
@@ -61,10 +58,6 @@ Outcome<std::string> QuestSongLibrary::install(const MapCandidate& map,
     }
     const auto* archiveData = reinterpret_cast<const std::uint8_t*>(response.value().body.data());
     const std::span<const std::uint8_t> archive(archiveData, response.value().body.size());
-    auto valid = ZipArchiveValidator::validate(archive);
-    if (!valid) {
-        return Outcome<std::string>::failure(valid.error());
-    }
     if (cancellation.isCancellationRequested()) {
         return Outcome<std::string>::failure(
             {ErrorCode::Cancelled, "The map installation was cancelled.", false, std::nullopt});
@@ -79,25 +72,11 @@ Outcome<std::string> QuestSongLibrary::install(const MapCandidate& map,
         return Outcome<std::string>::failure(
             storageError("Could not create the map staging directory: " + error.message()));
     }
-    const auto archivePath = operationRoot / "map.zip";
-    {
-        std::ofstream output(archivePath, std::ios::binary | std::ios::trunc);
-        output.write(response.value().body.data(),
-                     static_cast<std::streamsize>(response.value().body.size()));
-        if (!output) {
-            std::filesystem::remove_all(operationRoot, error);
-            return Outcome<std::string>::failure(storageError("Could not stage the downloaded map archive."));
-        }
-    }
-
     const auto extracted = operationRoot / "extracted";
-    std::filesystem::create_directories(extracted, error);
-    const auto fileUrl = "file://" + archivePath.string();
-    if (!BeatSaver::API::DownloadSongZip(WebUtils::URLOptions(fileUrl), extracted)) {
+    auto extraction = ZipArchiveExtractor::extract(archive, extracted);
+    if (!extraction) {
         std::filesystem::remove_all(operationRoot, error);
-        return Outcome<std::string>::failure({ErrorCode::InvalidResponse,
-                                              "The validated BeatSaver archive could not be extracted.",
-                                              false, std::nullopt});
+        return Outcome<std::string>::failure(extraction.error());
     }
     auto extractedValid = validateExtracted(extracted);
     if (!extractedValid) {

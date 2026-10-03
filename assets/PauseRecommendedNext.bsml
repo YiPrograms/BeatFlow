@@ -4,10 +4,10 @@
           xsi:noNamespaceSchemaLocation='https://raw.githubusercontent.com/RedBrumbler/Quest-BSML-Docs/gh-pages/schema.xsd'>
   <text id='headingText' text='Up Next' font-size='3.2' align='Center'
         preferred-height='6' word-wrapping='true'/>
-  <text id='item0Text' text='Recommendation' font-size='2.3' align='MidlineLeft'
+  <text id='item0Text' text='Recommendation' font-size='2.7' align='MidlineLeft'
         preferred-height='7' word-wrapping='true'/>
-  <text id='item1Text' text='Recommendation' font-size='2.3' align='MidlineLeft'
+  <text id='item1Text' text='Recommendation' font-size='2.7' align='MidlineLeft'
         preferred-height='7' word-wrapping='true'/>
-  <text id='item2Text' text='Recommendation' font-size='2.3' align='MidlineLeft'
+  <text id='item2Text' text='Recommendation' font-size='2.7' align='MidlineLeft'
         preferred-height='7' word-wrapping='true'/>
 </vertical>

@@ -14,6 +14,7 @@ DECLARE_CLASS_CODEGEN(beatflow::quest, RecommendedNextPanel, UnityEngine::MonoBe
     DECLARE_INSTANCE_FIELD(UnityW<UnityEngine::UI::Button>, item0Button);
     DECLARE_INSTANCE_FIELD(UnityW<UnityEngine::UI::Button>, item1Button);
     DECLARE_INSTANCE_FIELD(UnityW<UnityEngine::UI::Button>, item2Button);
+    DECLARE_INSTANCE_FIELD(UnityW<UnityEngine::UI::Button>, seeMoreButton);
     DECLARE_INSTANCE_FIELD(UnityW<UnityEngine::UI::Image>, item0Image);
     DECLARE_INSTANCE_FIELD(UnityW<UnityEngine::UI::Image>, item1Image);
     DECLARE_INSTANCE_FIELD(UnityW<UnityEngine::UI::Image>, item2Image);

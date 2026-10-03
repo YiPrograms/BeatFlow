@@ -2,11 +2,14 @@
 
 #include "beatflow/services/AtomicJsonCache.hpp"
 #include "beatflow/services/WorkerQueue.hpp"
+#include "beatflow/services/ZipArchiveExtractor.hpp"
 
 #include <atomic>
 #include <chrono>
 #include <filesystem>
+#include <fstream>
 #include <future>
+#include <iterator>
 
 using namespace beatflow;
 
@@ -55,4 +58,22 @@ BF_TEST("bounded worker queue executes accepted work") {
     BF_REQUIRE(future.wait_for(std::chrono::seconds(2)) == std::future_status::ready);
     queue.stop();
     BF_REQUIRE(!queue.submit([] {}));
+}
+
+BF_TEST("validated map archive extracts the exact downloaded bytes") {
+    const auto fixture = std::filesystem::path(BEATFLOW_FIXTURE_DIR) / "map_archive.zip";
+    std::ifstream input(fixture, std::ios::binary);
+    const std::vector<char> bytes(std::istreambuf_iterator<char>(input), {});
+    const auto root = std::filesystem::temp_directory_path() /
+                      ("beatflow-extract-test-" +
+                       std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+    const auto* data = reinterpret_cast<const std::uint8_t*>(bytes.data());
+
+    const auto extracted = ZipArchiveExtractor::extract({data, bytes.size()}, root);
+
+    BF_REQUIRE(extracted.ok());
+    BF_REQUIRE(std::filesystem::exists(root / "Info.dat"));
+    BF_REQUIRE(std::filesystem::file_size(root / "ExpertPlusStandard.dat") > 0);
+    std::error_code ignored;
+    std::filesystem::remove_all(root, ignored);
 }

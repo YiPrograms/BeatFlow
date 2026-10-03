@@ -25,10 +25,15 @@ All notable changes to BeatFlow are documented here. The project follows
 - Keep the Browser action safe when device authorization has not produced a URL.
 - Keep Google OAuth tokens off the unsupported authenticated InnerTube path.
 - Resolve shortened and TV-size maps through the matching original recording when an exact edit is absent.
+- Use YouTube's top search result as a radio seed when strict identity scoring cannot resolve localized
+  or edited Beat Saber metadata.
 - Replace low-recall BeatSaver text search with the complete SongDetails catalog used by
   BetterSongSearch and match bilingual Japanese/English title aliases.
 - Avoid YouTube Music's rejected authenticated InnerTube requests by reading likes through the
   official YouTube Data API and expanding them with anonymous radio.
+- Extract the exact validated BeatSaver archive instead of passing a local file URL back through the
+  network downloader.
+- Keep For You and Up Next browse state separate while background results arrive.
 
 ### Changed
 

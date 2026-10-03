@@ -29,7 +29,29 @@ std::string stripShortVersionLabel(std::string value) {
             position += label.size();
         }
     }
-    return value;
+    std::string collapsed;
+    collapsed.reserve(value.size());
+    bool previousSpace = true;
+    for (const unsigned char character : value) {
+        const bool space = std::isspace(character) != 0;
+        if (!space || !previousSpace) {
+            collapsed.push_back(space ? ' ' : static_cast<char>(character));
+        }
+        previousSpace = space;
+    }
+    if (!collapsed.empty() && collapsed.back() == ' ') {
+        collapsed.pop_back();
+    }
+    for (const std::string_view emptyPair : {"()", "( )", "[]", "[ ]", "{}", "{ }"}) {
+        std::size_t position = 0;
+        while ((position = collapsed.find(emptyPair, position)) != std::string::npos) {
+            collapsed.erase(position, emptyPair.size());
+        }
+    }
+    while (!collapsed.empty() && collapsed.back() == ' ') {
+        collapsed.pop_back();
+    }
+    return collapsed;
 }
 
 } // namespace
@@ -76,9 +98,9 @@ RecommendationEngine::upNext(const std::string& currentTitle, const std::string&
 Outcome<Track> RecommendationEngine::resolveTrack(const std::string& title, const std::string& artist,
                                                   std::optional<int> durationSeconds,
                                                   const CancellationToken& cancellation) {
-    auto candidates = musicProvider_.search(TextNormalizer::searchQuery(title, artist), cancellation);
-    if (!candidates) {
-        return Outcome<Track>::failure(candidates.error());
+    auto exactCandidates = musicProvider_.search(TextNormalizer::searchQuery(title, artist), cancellation);
+    if (!exactCandidates) {
+        return Outcome<Track>::failure(exactCandidates.error());
     }
 
     Track target{"",
@@ -90,8 +112,9 @@ Outcome<Track> RecommendationEngine::resolveTrack(const std::string& title, cons
                  1.0};
     std::optional<Track> best;
     double bestIdentity = 0.0;
-    const auto selectBest = [this, &candidates, &best, &bestIdentity](const Track& identityTarget) {
-        for (const auto& candidate : candidates.value()) {
+    const auto selectBest = [this, &best, &bestIdentity](const Track& identityTarget,
+                                                         const std::vector<Track>& candidates) {
+        for (const auto& candidate : candidates) {
             MapCandidate comparable;
             comparable.songTitle = candidate.title;
             comparable.songArtist = candidate.artists.empty() ? "" : candidate.artists.front();
@@ -106,25 +129,44 @@ Outcome<Track> RecommendationEngine::resolveTrack(const std::string& title, cons
             }
         }
     };
-    selectBest(target);
+    selectBest(target, exactCandidates.value());
+
+    std::optional<Track> providerBest;
+    if (!exactCandidates.value().empty()) {
+        providerBest = exactCandidates.value().front();
+    }
 
     // Short edits are frequently absent from YouTube Music even when the original
     // recording is present. Using the same recording as the radio seed is safe
     // when title and artist still match; duration is intentionally neutral here.
     const auto normalizedTitle = TextNormalizer{}.title(title);
-    if (!best && normalizedTitle.recordingMarkers.contains("short")) {
+    if (normalizedTitle.recordingMarkers.contains("short")) {
         auto originalRecording = target;
         originalRecording.title = stripShortVersionLabel(title);
         originalRecording.durationSeconds.reset();
-        selectBest(originalRecording);
+        auto originalCandidates =
+            musicProvider_.search(TextNormalizer::searchQuery(originalRecording.title, artist), cancellation);
+        if (originalCandidates) {
+            selectBest(originalRecording, originalCandidates.value());
+            if (!originalCandidates.value().empty()) {
+                providerBest = originalCandidates.value().front();
+            }
+        } else if (!providerBest) {
+            return Outcome<Track>::failure(originalCandidates.error());
+        }
     }
 
-    if (!best) {
-        return Outcome<Track>::failure({ErrorCode::NotFound,
-                                        "YouTube Music could not confidently identify this song.", false,
-                                        std::nullopt});
+    if (best) {
+        return Outcome<Track>::success(std::move(*best));
     }
-    return Outcome<Track>::success(std::move(*best));
+    if (providerBest) {
+        // Search results already carry the provider's relevance ordering. A loose
+        // fallback is appropriate for a radio seed; BeatSaver map selection still
+        // applies the strict recording-identity matcher below this boundary.
+        return Outcome<Track>::success(std::move(*providerBest));
+    }
+    return Outcome<Track>::failure(
+        {ErrorCode::NotFound, "YouTube Music search returned no tracks for this song.", false, std::nullopt});
 }
 
 Outcome<std::vector<RecommendedMap>> RecommendationEngine::recommend(std::vector<Track> tracks,

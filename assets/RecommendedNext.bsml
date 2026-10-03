@@ -7,17 +7,17 @@
   <horizontal preferred-height='7' child-expand-width='false'>
     <image id='item0Image' preferred-width='6.5' preferred-height='6.5' preserve-aspect='true'/>
     <button id='item0Button' on-click='Select0' pref-width='32'
-            text='Recommendation' font-size='2.3'/>
+            text='Recommendation' font-size='2.7'/>
   </horizontal>
   <horizontal preferred-height='7' child-expand-width='false'>
     <image id='item1Image' preferred-width='6.5' preferred-height='6.5' preserve-aspect='true'/>
     <button id='item1Button' on-click='Select1' pref-width='32'
-            text='Recommendation' font-size='2.3'/>
+            text='Recommendation' font-size='2.7'/>
   </horizontal>
   <horizontal preferred-height='7' child-expand-width='false'>
     <image id='item2Image' preferred-width='6.5' preferred-height='6.5' preserve-aspect='true'/>
     <button id='item2Button' on-click='Select2' pref-width='32'
-            text='Recommendation' font-size='2.3'/>
+            text='Recommendation' font-size='2.7'/>
   </horizontal>
-  <button text='See more' on-click='SeeMore' preferred-height='5' font-size='2.5'/>
+  <button id='seeMoreButton' text='See more' on-click='SeeMore' preferred-height='5' font-size='2.5'/>
 </vertical>
