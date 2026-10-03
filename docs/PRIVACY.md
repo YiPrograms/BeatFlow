@@ -11,14 +11,15 @@ address. BeatFlow stores bounded response caches locally so useful results can s
 
 ## With optional YouTube Music connection
 
-The preview imports the player's personal OAuth client ID and secret from `oauth_client.json`. It uses
-Google's device authorization flow and the YouTube scope to obtain access and refresh tokens. The
+The release build contains the app's Google **TVs and Limited Input devices** OAuth client metadata.
+Selecting **Sign in with Google** starts Google's device authorization flow, opens its verification
+page in the Quest browser, and uses the YouTube scope to obtain access and refresh tokens. The
 authenticated token is sent only for personalized Home `browse` requests. Search and song radio remain
 anonymous and do not depend on the account.
 
-Client credentials and OAuth tokens are separate AES-GCM encrypted files. The encryption key is
-generated and retained by Android Keystore. The plaintext import file is deleted after successful
-encryption. Personalized response caches are stored separately from anonymous and BeatSaver caches.
+Player OAuth tokens are stored in an AES-GCM encrypted file whose key is generated and retained by
+Android Keystore. Personalized response caches are stored separately from anonymous and BeatSaver
+caches. BeatFlow never receives the player's Google password.
 
 ## Local files
 
@@ -26,7 +27,6 @@ BeatFlow uses this directory:
 
 ```text
 /sdcard/ModData/com.beatgames.beatsaber/Mods/BeatFlow/
-├── oauth_client.enc       encrypted imported client credentials
 ├── oauth_tokens.enc       encrypted access and refresh tokens
 ├── settings.json          Up Next display preferences
 ├── cache/maps/            bounded BeatSaver response cache
@@ -40,9 +40,9 @@ BeatFlow data clear.
 
 ## Delete data
 
-**Disconnect** removes imported client credentials, tokens, and personalized caches. **Clear local
-data** also removes anonymous music and BeatSaver caches and staging files. Removing the entire BeatFlow
-mod-data directory after uninstall deletes the same local data.
+**Disconnect** removes player tokens and personalized caches. **Clear local data** also removes
+anonymous music and BeatSaver caches and staging files. Removing the entire BeatFlow mod-data directory
+after uninstall deletes the same local data.
 
 ## Unofficial interface
 

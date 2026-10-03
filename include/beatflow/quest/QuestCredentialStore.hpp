@@ -9,7 +9,8 @@ namespace beatflow::quest {
 
 class QuestCredentialStore final : public CredentialStore {
   public:
-    explicit QuestCredentialStore(std::filesystem::path root);
+    explicit QuestCredentialStore(std::filesystem::path root,
+                                  OAuthClientCredentials packagedCredentials = {});
 
     Outcome<OAuthClientCredentials> loadClientCredentials() override;
     Outcome<std::optional<OAuthTokens>> loadTokens() override;
@@ -24,6 +25,7 @@ class QuestCredentialStore final : public CredentialStore {
     Outcome<bool> writeEncrypted(const std::filesystem::path& path, const std::string& value);
 
     std::filesystem::path root_;
+    OAuthClientCredentials packagedCredentials_;
     AndroidKeystore keystore_;
 };
 

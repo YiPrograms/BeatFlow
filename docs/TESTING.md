@@ -40,8 +40,9 @@ QMOD checksum, and dependency versions.
 4. Select an uninstalled recommendation, verify progress, choose a difficulty on the normal details
    screen, play it, finish, and continue for several rounds.
 5. Fail a song, quit a song, and play multiplayer. Confirm no shelf appears and normal navigation works.
-6. Add personal client credentials, connect with the device URL and code, and verify expiry, cancel,
-   token refresh, reconnect, Disconnect, and Clear local data.
+6. Select **Sign in with Google**, confirm the Quest browser opens to the exact verification URL, enter
+   the displayed code, return to Beat Saber, and verify completion. Also test **Browser** reopening,
+   expiry, cancel, token refresh, reconnect, Disconnect, and Clear local data.
 7. Browse For You, change every difficulty and NPS filter, select installed and uninstalled maps, and
    verify loading, empty, filtered, offline, cached, retry, and malformed-response states.
 8. Interrupt a download and restart Beat Saber. Confirm there is no partial song and a retry succeeds.

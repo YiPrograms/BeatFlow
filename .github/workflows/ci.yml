@@ -30,6 +30,9 @@ jobs:
   quest:
     name: Pinned Quest build and package
     runs-on: ubuntu-latest
+    env:
+      BEATFLOW_OAUTH_CLIENT_ID: ${{ secrets.BEATFLOW_OAUTH_CLIENT_ID }}
+      BEATFLOW_OAUTH_CLIENT_SECRET: ${{ secrets.BEATFLOW_OAUTH_CLIENT_SECRET }}
     steps:
       - uses: actions/checkout@v4
       - name: Install build tools

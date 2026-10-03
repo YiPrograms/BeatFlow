@@ -306,8 +306,12 @@ BF_TEST("device authorization persists completed OAuth tokens") {
     const auto authorization = oauth.begin(cancellation.token());
     BF_REQUIRE(authorization.ok());
     BF_REQUIRE(authorization.value().userCode == "ABCD-EFGH");
+    BF_REQUIRE(http.requests.at(0).url == "https://oauth2.googleapis.com/device/code");
     const auto poll = oauth.poll(authorization.value(), cancellation.token());
     BF_REQUIRE(poll.ok());
+    BF_REQUIRE(http.requests.at(1).body.find("device_code=device") != std::string::npos);
+    BF_REQUIRE(http.requests.at(1).body.find(
+                   "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code") != std::string::npos);
     BF_REQUIRE(poll.value().status == AuthorizationStatus::Complete);
     BF_REQUIRE(credentials.tokens.has_value());
     BF_REQUIRE(credentials.tokens->refreshToken == "refresh");

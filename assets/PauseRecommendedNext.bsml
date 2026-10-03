@@ -1,13 +1,13 @@
-<vertical preferred-width='38' preferred-height='32' anchor-pos-x='54' anchor-pos-y='1'
+<vertical preferred-width='42' preferred-height='35' anchor-pos-x='52' anchor-pos-y='1'
           bg='round-rect-panel' pad='1.2' spacing='0.6' child-expand-height='false'
           xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
           xsi:noNamespaceSchemaLocation='https://raw.githubusercontent.com/RedBrumbler/Quest-BSML-Docs/gh-pages/schema.xsd'>
-  <text id='headingText' text='Up Next' font-size='2.4' align='Center'
+  <text id='headingText' text='Up Next' font-size='3.2' align='Center'
         preferred-height='6' word-wrapping='true'/>
-  <text id='item0Text' text='Recommendation' font-size='2.0' align='MidlineLeft'
+  <text id='item0Text' text='Recommendation' font-size='2.3' align='MidlineLeft'
         preferred-height='7' word-wrapping='true'/>
-  <text id='item1Text' text='Recommendation' font-size='2.0' align='MidlineLeft'
+  <text id='item1Text' text='Recommendation' font-size='2.3' align='MidlineLeft'
         preferred-height='7' word-wrapping='true'/>
-  <text id='item2Text' text='Recommendation' font-size='2.0' align='MidlineLeft'
+  <text id='item2Text' text='Recommendation' font-size='2.3' align='MidlineLeft'
         preferred-height='7' word-wrapping='true'/>
 </vertical>

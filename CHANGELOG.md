@@ -9,8 +9,10 @@ All notable changes to BeatFlow are documented here. The project follows
 
 - Anonymous current-song resolution and InnerTube radio recommendations.
 - Optional Google device authorization for personalized YouTube Music Home recommendations.
+- Quest-browser sign-in with release-provided OAuth client metadata; no user-side JSON copy is needed.
 - Identity-first BeatSaver matching with difficulty and NPS filters.
 - Progressive For You browser plus configurable pause and post-results Up Next panels.
+- Normal-size text in the compact pause and results Up Next panels.
 - Direct, cancellable libcurl transport that avoids WebUtils 0.6.9's invalid HTTP status storage.
 - Validated staged map installation and normal Beat Saber song-detail handoff.
 - Encrypted credential and token storage through Android Keystore.

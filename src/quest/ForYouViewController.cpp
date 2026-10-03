@@ -4,6 +4,7 @@
 #include "beatflow/quest/CompositionRoot.hpp"
 #include "beatflow/quest/UI.hpp"
 
+#include "UnityEngine/Application.hpp"
 #include "UnityEngine/Component.hpp"
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
 #include "bsml/shared/BSML.hpp"
@@ -59,6 +60,7 @@ void ForYouViewController::ctor() {
     page = 0;
     difficultyMode = 0;
     npsMode = 0;
+    authorizationUrl = nullptr;
 }
 
 void ForYouViewController::DidActivate(bool firstActivation, bool, bool) {
@@ -83,8 +85,8 @@ void ForYouViewController::DidActivate(bool firstActivation, bool, bool) {
         const auto state = CompositionRoot::instance().browseState();
         if (state.recommendations.empty() && !state.loading) {
             setText(statusText,
-                    "Personalized For You is optional. Add your OAuth client file, then select Connect. "
-                    "Anonymous Up Next already works without an account.");
+                    "Personalized For You is optional. Select Sign in with Google to open the Quest "
+                    "browser. Anonymous Up Next already works without an account.");
         }
     }
 }
@@ -105,15 +107,29 @@ void ForYouViewController::Connect() {
         std::string connection = state.message;
         if (!state.verificationUrl.empty()) {
             connection += "\n" + state.verificationUrl + "  Code: " + state.userCode;
+            authorizationUrl = il2cpp_utils::newcsstr(state.verificationUrl);
         }
         setText(connectionText, connection);
+        if (!state.verificationUrl.empty()) {
+            OpenBrowser();
+        }
         if (state.connected) {
             Refresh();
         }
     });
 }
 
+void ForYouViewController::OpenBrowser() {
+    const std::string url = authorizationUrl;
+    if (url.empty()) {
+        setText(connectionText, "Select Sign in with Google first.");
+        return;
+    }
+    UnityEngine::Application::OpenURL(authorizationUrl);
+}
+
 void ForYouViewController::Disconnect() {
+    authorizationUrl = nullptr;
     const auto result = CompositionRoot::instance().disconnect();
     setText(connectionText, result ? std::string("YouTube Music disconnected. Anonymous Up Next still works.")
                                    : result.error().message);

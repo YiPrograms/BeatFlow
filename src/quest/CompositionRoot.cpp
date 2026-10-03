@@ -1,5 +1,7 @@
 #include "beatflow/quest/CompositionRoot.hpp"
 
+#include "beatflow/quest/BuildConfig.hpp"
+
 #include "GlobalNamespace/BeatmapLevel.hpp"
 #include "beatsaber-hook/shared/utils/il2cpp-functions.hpp"
 #include "beatsaverplusplus/shared/BeatSaver.hpp"
@@ -60,9 +62,10 @@ CompositionRoot& CompositionRoot::instance() {
 CompositionRoot::CompositionRoot()
     : dataRoot_(kDataRoot), http_(transport_), mapCache_(dataRoot_ / "cache" / "maps"),
       musicCache_(dataRoot_ / "cache" / "music"), personalizedCache_(dataRoot_ / "cache" / "accounts"),
-      credentials_(dataRoot_), oauth_(http_, credentials_),
-      music_(http_, oauth_, &musicCache_, &personalizedCache_), catalog_(http_, &mapCache_),
-      library_(http_, dataRoot_ / "staging"), engine_(music_, catalog_, &library_), workers_(2, 32),
+      credentials_(dataRoot_, {std::string(build::kOAuthClientId), std::string(build::kOAuthClientSecret)}),
+      oauth_(http_, credentials_), music_(http_, oauth_, &musicCache_, &personalizedCache_),
+      catalog_(http_, &mapCache_), library_(http_, dataRoot_ / "staging"),
+      engine_(music_, catalog_, &library_), workers_(2, 32),
       interactiveCancellation_(std::make_shared<CancellationSource>()),
       prefetchCancellation_(std::make_shared<CancellationSource>()) {}
 
@@ -202,8 +205,8 @@ void CompositionRoot::connect(AuthorizationCallback callback) {
                 return;
             }
             const auto device = authorization.value();
-            publish({"Open the URL on a phone or computer and enter the code.", device.verificationUrl,
-                     device.userCode, false, true});
+            publish({"The Google sign-in page is opening. Enter this code in the browser.",
+                     device.verificationUrl, device.userCode, false, true});
 
             auto nextDelay = device.pollingIntervalSeconds;
             const auto expiresAt =

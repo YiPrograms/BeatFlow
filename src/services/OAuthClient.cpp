@@ -11,10 +11,10 @@
 namespace beatflow {
 namespace {
 
-constexpr auto kDeviceCodeUrl = "https://www.youtube.com/o/oauth2/device/code";
+constexpr auto kDeviceCodeUrl = "https://oauth2.googleapis.com/device/code";
 constexpr auto kTokenUrl = "https://oauth2.googleapis.com/token";
 constexpr auto kScope = "https://www.googleapis.com/auth/youtube";
-constexpr auto kDeviceGrant = "http://oauth.net/grant_type/device/1.0";
+constexpr auto kDeviceGrant = "urn:ietf:params:oauth:grant-type:device_code";
 
 std::int64_t nowEpochSeconds() {
     return std::chrono::duration_cast<std::chrono::seconds>(
@@ -81,7 +81,7 @@ Outcome<DeviceAuthorization> OAuthClient::begin(const CancellationToken& cancell
     if (credentials.value().clientId.empty() || credentials.value().clientSecret.empty()) {
         return Outcome<DeviceAuthorization>::failure(
             {ErrorCode::Configuration,
-             "OAuth client_id and client_secret are required in the BeatFlow credentials file.", false,
+             "This BeatFlow build does not include its Google OAuth client credentials.", false,
              std::nullopt});
     }
 
@@ -135,7 +135,7 @@ Outcome<AuthorizationPoll> OAuthClient::poll(const DeviceAuthorization& authoriz
                        {"User-Agent", "Mozilla/5.0 Cobalt/Version BeatFlow/0.1"}};
     request.body = form({{"client_id", credentials.value().clientId},
                          {"client_secret", credentials.value().clientSecret},
-                         {"code", authorization.deviceCode},
+                         {"device_code", authorization.deviceCode},
                          {"grant_type", kDeviceGrant}});
     auto response = http_.send(request, cancellation);
     if (!response) {

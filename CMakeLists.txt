@@ -77,6 +77,22 @@ if(BEATFLOW_BUILD_QUEST OR ANDROID)
 
     include("${EXTERN_DIR}/includes/kaleb/shared/cmake/assets.cmake")
 
+    set(BEATFLOW_OAUTH_CLIENT_ID "$ENV{BEATFLOW_OAUTH_CLIENT_ID}" CACHE STRING
+        "Google TVs and Limited Input devices OAuth client ID")
+    set(BEATFLOW_OAUTH_CLIENT_SECRET "$ENV{BEATFLOW_OAUTH_CLIENT_SECRET}" CACHE STRING
+        "Google TVs and Limited Input devices OAuth client secret")
+    mark_as_advanced(BEATFLOW_OAUTH_CLIENT_ID BEATFLOW_OAUTH_CLIENT_SECRET)
+    string(REPLACE "\\" "\\\\" BEATFLOW_OAUTH_CLIENT_ID_ESCAPED "${BEATFLOW_OAUTH_CLIENT_ID}")
+    string(REPLACE "\"" "\\\"" BEATFLOW_OAUTH_CLIENT_ID_ESCAPED "${BEATFLOW_OAUTH_CLIENT_ID_ESCAPED}")
+    string(REPLACE "\\" "\\\\" BEATFLOW_OAUTH_CLIENT_SECRET_ESCAPED "${BEATFLOW_OAUTH_CLIENT_SECRET}")
+    string(REPLACE "\"" "\\\"" BEATFLOW_OAUTH_CLIENT_SECRET_ESCAPED
+                   "${BEATFLOW_OAUTH_CLIENT_SECRET_ESCAPED}")
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/beatflow/quest/BuildConfig.hpp.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/generated/beatflow/quest/BuildConfig.hpp"
+        @ONLY
+    )
+
     add_library(BeatFlow SHARED
         src/quest/AndroidKeystore.cpp
         src/quest/BeatFlowFlowCoordinator.cpp
@@ -96,7 +112,8 @@ if(BEATFLOW_BUILD_QUEST OR ANDROID)
     target_sources(BeatFlow PRIVATE ${BEATFLOW_INLINE_HOOK_SOURCES})
     add_assets(BeatFlow-assets STATIC "${CMAKE_CURRENT_SOURCE_DIR}/assets"
                "${CMAKE_CURRENT_SOURCE_DIR}/include/beatflow/quest/Assets.hpp")
-    target_include_directories(BeatFlow PRIVATE include "${EXTERN_DIR}/includes/${CODEGEN_ID}/include")
+    target_include_directories(BeatFlow PRIVATE include "${CMAKE_CURRENT_BINARY_DIR}/generated"
+                                             "${EXTERN_DIR}/includes/${CODEGEN_ID}/include")
     target_compile_options(BeatFlow PRIVATE -frtti -fexceptions -fPIC -fvisibility=hidden)
     target_compile_definitions(BeatFlow PRIVATE
         MOD_ID="BeatFlow"

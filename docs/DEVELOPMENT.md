@@ -27,12 +27,22 @@ the pinned NDK:
 ```sh
 qpm restore
 qpm ndk resolve -d
+export BEATFLOW_OAUTH_CLIENT_ID='your TVs and Limited Input devices client ID'
+export BEATFLOW_OAUTH_CLIENT_SECRET='your client secret'
 cmake --preset quest-release
 cmake --build --preset quest-release
 ```
 
-QPM generates `qpm_defines.cmake`, `extern.cmake`, `qpm.shared.json`, `extern/`, and `shared/`. Those are
-machine-generated and ignored by Git. `ndkpath.txt` can point CMake at the downloaded NDK.
+Create the OAuth client in Google Cloud using the **TVs and Limited Input devices** application type,
+following [Google's device authorization guide](https://developers.google.com/identity/protocols/oauth2/limited-input-device).
+The values are compiled into the mod so installed users can start the device flow directly from
+BeatFlow. Keep them in local environment variables or repository secrets; never commit them or print
+them in build logs. A build without these values still supports anonymous Up Next, but its personalized
+sign-in action reports that the release client is missing. The release workflow refuses to package a
+tag unless both secrets are configured.
+
+QPM generates `qpm_defines.cmake`, `extern.cmake`, `qpm.shared.json`, `extern/`, and `shared/`. These
+local resolution outputs are ignored by Git. `ndkpath.txt` can point CMake at the downloaded NDK.
 
 The resulting library is `build/quest/libBeatFlow.so`. It targets Android API 24 and `arm64-v8a`.
 

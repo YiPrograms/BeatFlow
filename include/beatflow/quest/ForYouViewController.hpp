@@ -25,6 +25,7 @@ DECLARE_CLASS_CODEGEN(beatflow::quest, ForYouViewController, HMUI::ViewControlle
     DECLARE_INSTANCE_FIELD(UnityW<UnityEngine::UI::Image>, card0Image);
     DECLARE_INSTANCE_FIELD(UnityW<UnityEngine::UI::Image>, card1Image);
     DECLARE_INSTANCE_FIELD(UnityW<UnityEngine::UI::Image>, card2Image);
+    DECLARE_INSTANCE_FIELD(StringW, authorizationUrl);
     DECLARE_INSTANCE_FIELD(int32_t, page);
     DECLARE_INSTANCE_FIELD(int32_t, difficultyMode);
     DECLARE_INSTANCE_FIELD(int32_t, npsMode);
@@ -33,6 +34,7 @@ DECLARE_CLASS_CODEGEN(beatflow::quest, ForYouViewController, HMUI::ViewControlle
 
     DECLARE_INSTANCE_METHOD(void, Refresh);
     DECLARE_INSTANCE_METHOD(void, Connect);
+    DECLARE_INSTANCE_METHOD(void, OpenBrowser);
     DECLARE_INSTANCE_METHOD(void, Disconnect);
     DECLARE_INSTANCE_METHOD(void, ClearLocalData);
     DECLARE_INSTANCE_METHOD(void, Cancel);

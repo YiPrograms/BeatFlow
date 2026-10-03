@@ -1,23 +1,23 @@
-<vertical preferred-width='36' preferred-height='36' anchor-pos-x='56' anchor-pos-y='2'
+<vertical preferred-width='42' preferred-height='40' anchor-pos-x='53' anchor-pos-y='2'
           bg='round-rect-panel' pad='1.2' spacing='0.4' child-expand-height='false'
           xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
           xsi:noNamespaceSchemaLocation='https://raw.githubusercontent.com/RedBrumbler/Quest-BSML-Docs/gh-pages/schema.xsd'>
-  <text id='headingText' text='Up Next' font-size='2.4' align='Center'
+  <text id='headingText' text='Up Next' font-size='3.2' align='Center'
         preferred-height='6' word-wrapping='true'/>
   <horizontal preferred-height='7' child-expand-width='false'>
-    <image id='item0Image' preferred-width='6' preferred-height='6' preserve-aspect='true'/>
-    <button id='item0Button' on-click='Select0' pref-width='27'
-            text='Recommendation' font-size='1.8'/>
+    <image id='item0Image' preferred-width='6.5' preferred-height='6.5' preserve-aspect='true'/>
+    <button id='item0Button' on-click='Select0' pref-width='32'
+            text='Recommendation' font-size='2.3'/>
   </horizontal>
   <horizontal preferred-height='7' child-expand-width='false'>
-    <image id='item1Image' preferred-width='6' preferred-height='6' preserve-aspect='true'/>
-    <button id='item1Button' on-click='Select1' pref-width='27'
-            text='Recommendation' font-size='1.8'/>
+    <image id='item1Image' preferred-width='6.5' preferred-height='6.5' preserve-aspect='true'/>
+    <button id='item1Button' on-click='Select1' pref-width='32'
+            text='Recommendation' font-size='2.3'/>
   </horizontal>
   <horizontal preferred-height='7' child-expand-width='false'>
-    <image id='item2Image' preferred-width='6' preferred-height='6' preserve-aspect='true'/>
-    <button id='item2Button' on-click='Select2' pref-width='27'
-            text='Recommendation' font-size='1.8'/>
+    <image id='item2Image' preferred-width='6.5' preferred-height='6.5' preserve-aspect='true'/>
+    <button id='item2Button' on-click='Select2' pref-width='32'
+            text='Recommendation' font-size='2.3'/>
   </horizontal>
-  <button text='See more' on-click='SeeMore' preferred-height='5' font-size='2.0'/>
+  <button text='See more' on-click='SeeMore' preferred-height='5' font-size='2.5'/>
 </vertical>

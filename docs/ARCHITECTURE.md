@@ -62,9 +62,10 @@ menu flow uses `ForYouViewController` for personalized and expanded results.
 resulting tree and `Info.dat`, and renames the completed directory into SongCore's custom-level folder.
 It then asks SongCore to refresh and hands the hash to the normal level-selection UI.
 
-`QuestCredentialStore` imports the preview's local OAuth client file once. `AndroidKeystore` creates a
-non-exportable AES key and stores client credentials and tokens in separate AES-GCM envelopes. Ordinary
-configuration and caches never contain those secrets.
+`QuestCredentialStore` receives the app's Google limited-input-device OAuth client metadata from the
+generated build configuration. It keeps a one-time encrypted file import as a compatibility path for
+older self-builds. `AndroidKeystore` creates a non-exportable AES key for player OAuth tokens. Ordinary
+configuration and caches never contain those tokens.
 
 ## Threading and lifecycle
 

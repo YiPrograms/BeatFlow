@@ -71,32 +71,21 @@ Do not install this build on another Beat Saber version. Native Quest mods are v
 Up Next uses anonymous InnerTube `search` and `next` requests. Follow this section only if you want the
 personalized For You feed.
 
-Google does not provide BeatFlow with shared OAuth credentials. For this developer preview, create a
-personal OAuth client that supports the device authorization flow, following the
-[ytmusicapi OAuth setup reference](https://ytmusicapi.readthedocs.io/en/stable/setup/oauth.html). Then
-create a local file named `oauth_client.json`:
+1. Open **Mods → BeatFlow → Sign in with Google**.
+2. BeatFlow opens Google's device sign-in page in the Quest browser and shows the authorization code
+   in Beat Saber.
+3. Enter the displayed code and approve access. Return to Beat Saber; BeatFlow continues polling and
+   finishes automatically.
 
-```json
-{
-  "client_id": "YOUR_CLIENT_ID",
-  "client_secret": "YOUR_CLIENT_SECRET"
-}
-```
+The **Browser** button reopens the same Google page while its code is active. BeatFlow validates an
+authenticated Home request and a radio request before reporting the connection as ready. You do not
+need to create or copy an OAuth JSON file when using an official BeatFlow build.
 
-Copy it to BeatFlow's mod-data folder on the headset:
-
-```sh
-adb shell mkdir -p /sdcard/ModData/com.beatgames.beatsaber/Mods/BeatFlow
-adb push oauth_client.json /sdcard/ModData/com.beatgames.beatsaber/Mods/BeatFlow/oauth_client.json
-```
-
-Open **Mods → BeatFlow → Connect YouTube Music**. BeatFlow displays Google's authorization URL and
-code. Complete the prompt on a phone or computer while leaving Beat Saber open. BeatFlow validates an
-authenticated Home request and a radio request before reporting the connection as ready.
-
-On first use, BeatFlow imports the client file into Android Keystore-backed AES-GCM storage and removes
-the plaintext file. OAuth tokens are encrypted separately. Never commit `oauth_client.json`, include it
-in a QMOD, or share it in a bug report.
+Google requires device apps to use a **TVs and Limited Input devices** OAuth client, as described in
+its [limited-input device authorization guide](https://developers.google.com/identity/protocols/oauth2/limited-input-device).
+Release maintainers inject that client at build time; its metadata is part of the installed mod, while
+each player's access and refresh tokens are encrypted separately with Android Keystore. Self-build
+instructions are in [Development](docs/DEVELOPMENT.md).
 
 ## Use BeatFlow
 
@@ -133,8 +122,9 @@ every map produce a separate explanation from a recommendation feed with no conf
 
 ## Troubleshooting, privacy, and removal
 
-**BeatFlow says that account credentials are missing.** Anonymous Up Next still works. To use For You,
-copy `oauth_client.json` to the exact path above and select Connect again.
+**BeatFlow says that its Google OAuth client is missing.** Anonymous Up Next still works. An official
+release with this message was packaged incorrectly; report its version and checksum. Self-builders
+must provide the build environment variables documented in [Development](docs/DEVELOPMENT.md).
 
 **The code expired or authorization was denied.** Select Connect to start a new device flow. BeatFlow
 honors Google's polling interval, expiration, and slow-down responses.
@@ -146,7 +136,7 @@ or shortened recording.
 **A download failed.** Retry from the card. Interrupted work stays in staging and cannot publish a
 partial custom song. Maps with unsupported requirements are excluded before download.
 
-**Disconnect** removes encrypted OAuth credentials, tokens, and personalized recommendation caches.
+**Disconnect** removes encrypted player tokens and personalized recommendation caches.
 **Clear local data** also clears anonymous recommendation and BeatSaver caches plus download staging.
 Downloaded custom songs remain in SongCore's custom-level folder.
 

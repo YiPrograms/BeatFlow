@@ -30,9 +30,14 @@ std::uint32_t read32(const std::vector<std::uint8_t>& input, std::size_t offset)
 
 } // namespace
 
-QuestCredentialStore::QuestCredentialStore(std::filesystem::path root) : root_(std::move(root)) {}
+QuestCredentialStore::QuestCredentialStore(std::filesystem::path root,
+                                           OAuthClientCredentials packagedCredentials)
+    : root_(std::move(root)), packagedCredentials_(std::move(packagedCredentials)) {}
 
 Outcome<OAuthClientCredentials> QuestCredentialStore::loadClientCredentials() {
+    if (!packagedCredentials_.clientId.empty() && !packagedCredentials_.clientSecret.empty()) {
+        return Outcome<OAuthClientCredentials>::success(packagedCredentials_);
+    }
     const auto encryptedPath = root_ / "oauth_client.enc";
     auto stored = readEncrypted(encryptedPath);
     if (!stored && stored.error().code == ErrorCode::NotFound) {
@@ -40,9 +45,9 @@ Outcome<OAuthClientCredentials> QuestCredentialStore::loadClientCredentials() {
         if (!import) {
             return Outcome<OAuthClientCredentials>::failure(
                 {ErrorCode::Configuration,
-                 "Personalized For You needs your own Google OAuth client. Copy oauth_client.json to "
-                 "/sdcard/ModData/com.beatgames.beatsaber/Mods/BeatFlow/. Anonymous Up Next does not "
-                 "need an account.",
+                 "This BeatFlow build has no Google OAuth client. Release maintainers must inject a TVs "
+                 "and Limited Input devices client when building. Anonymous Up Next does not need an "
+                 "account.",
                  false, std::nullopt});
         }
         std::string plaintext((std::istreambuf_iterator<char>(import)), std::istreambuf_iterator<char>());
@@ -83,6 +88,12 @@ Outcome<std::optional<OAuthTokens>> QuestCredentialStore::loadTokens() {
     }
     try {
         const auto json = nlohmann::json::parse(stored.value());
+        const auto storedClientId = json.value("client_id", "");
+        if (!packagedCredentials_.clientId.empty() && storedClientId != packagedCredentials_.clientId) {
+            std::error_code ignored;
+            std::filesystem::remove(root_ / "oauth_tokens.enc", ignored);
+            return Outcome<std::optional<OAuthTokens>>::success(std::nullopt);
+        }
         OAuthTokens tokens{json.at("access_token").get<std::string>(),
                            json.at("refresh_token").get<std::string>(), json.value("token_type", "Bearer"),
                            json.at("expires_at").get<std::int64_t>()};
@@ -100,6 +111,11 @@ Outcome<bool> QuestCredentialStore::saveTokens(const OAuthTokens& tokens) {
                         {"refresh_token", tokens.refreshToken},
                         {"token_type", tokens.tokenType},
                         {"expires_at", tokens.expiresAtEpochSeconds}};
+    auto credentials = loadClientCredentials();
+    if (!credentials) {
+        return Outcome<bool>::failure(credentials.error());
+    }
+    json["client_id"] = credentials.value().clientId;
     return writeEncrypted(root_ / "oauth_tokens.enc", json.dump());
 }
 
