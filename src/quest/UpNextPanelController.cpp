@@ -31,6 +31,21 @@ SafePtrUnity<BSML::FloatingScreen> resultsScreen;
 SafePtrUnity<BSML::FloatingScreen> pauseScreen;
 SongSelectionNavigator navigator;
 
+constexpr UnityEngine::Vector2 PanelSize{98.0F, 66.0F};
+constexpr float PanelScale = 0.023F;
+constexpr float PanelX = 2.35F;
+constexpr float PanelZ = 3.2F;
+constexpr float ResultsPanelY = 1.62F;
+constexpr float PausePanelY = 1.48F;
+constexpr float RadiansToDegrees = 57.2957795F;
+
+UnityEngine::Quaternion facePlayer(const UnityEngine::Vector3& position) {
+    // Beat Saber's menu origin is the player's forward-facing reference point.
+    // Positive yaw turns a screen on the player's right back toward that origin.
+    const float yaw = std::atan2(position.x, position.z) * RadiansToDegrees;
+    return UnityEngine::Quaternion::Euler(0.0F, yaw, 0.0F);
+}
+
 void setText(TMPro::TextMeshProUGUI* target, const std::string& value) {
     if (target != nullptr)
         target->set_text(il2cpp_utils::newcsstr(value));
@@ -84,9 +99,10 @@ void openInSolo(const std::string& hash) {
 BSML::FloatingScreen* createScreen(const char* name, bool pause,
                                    GlobalNamespace::PauseMenuManager* pauseManager,
                                    GlobalNamespace::ResultsViewController* resultsView) {
-    auto* screen = BSML::FloatingScreen::CreateFloatingScreen(
-        UnityEngine::Vector2(84.0F, 54.0F), false, UnityEngine::Vector3(2.75F, pause ? 1.45F : 1.65F, 2.8F),
-        UnityEngine::Quaternion::Euler(0.0F, -28.0F, 0.0F), 0.0F, false);
+    const UnityEngine::Vector3 position(PanelX, pause ? PausePanelY : ResultsPanelY, PanelZ);
+    auto* screen = BSML::FloatingScreen::CreateFloatingScreen(PanelSize, false, position,
+                                                              facePlayer(position), 0.0F, false);
+    screen->get_transform()->set_localScale(UnityEngine::Vector3(PanelScale, PanelScale, PanelScale));
     screen->get_gameObject()->set_name(il2cpp_utils::newcsstr(name));
     if (auto* canvas = screen->GetComponent<UnityEngine::Canvas*>())
         canvas->set_sortingOrder(31);
