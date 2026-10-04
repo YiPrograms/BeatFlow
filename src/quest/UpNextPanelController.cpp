@@ -306,14 +306,12 @@ void UpNextPanelController::render(const RecommendationSessionState& state) {
                                                     safeYouTubeId(state.sourceTrack->providerId));
     }
 
-    if (state.loading)
-        setText(statusText, "");
-    else if (state.error)
-        setText(statusText, state.error->message);
-    else if (state.items.empty())
-        setText(statusText, "No confident BeatSaver matches were found.");
-    else
+    // Empty-state details are rendered in the panel body. Repeating them in the
+    // header makes errors and no-match messages appear twice.
+    if (!state.loading && !state.error && !state.items.empty())
         setText(statusText, std::to_string(state.items.size()) + " recommendations");
+    else
+        setText(statusText, "");
 
     const bool showContent = !state.loading && !state.items.empty();
     if (contentContainer != nullptr)
