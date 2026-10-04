@@ -1,10 +1,10 @@
-#include "beatflow/services/HttpHeaders.hpp"
+#include "beatnext/services/HttpHeaders.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <sstream>
 
-namespace beatflow::http {
+namespace beatnext::http {
 
 std::vector<std::pair<std::string, std::string>> parseHeaders(std::string_view raw) {
     std::vector<std::pair<std::string, std::string>> result;
@@ -47,4 +47,4 @@ int statusFromRawHeaders(std::string_view raw) {
     return status;
 }
 
-} // namespace beatflow::http
+} // namespace beatnext::http

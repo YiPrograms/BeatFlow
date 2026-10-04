@@ -1,6 +1,6 @@
-#include "beatflow/quest/QuestHttpClient.hpp"
+#include "beatnext/quest/QuestHttpClient.hpp"
 
-#include "beatflow/services/HttpHeaders.hpp"
+#include "beatnext/services/HttpHeaders.hpp"
 
 #include "libcurl/shared/curl.h"
 
@@ -11,7 +11,7 @@
 #include <limits>
 #include <string>
 
-namespace beatflow::quest {
+namespace beatnext::quest {
 namespace {
 
 constexpr auto kAndroidCaPath = "/system/etc/security/cacerts";
@@ -100,6 +100,27 @@ std::size_t appendBytes(char* bytes, std::size_t size, std::size_t count, void* 
     return byteCount;
 }
 
+struct ResponseWriter {
+    std::string* destination;
+    std::size_t maximumBytes;
+    bool exceeded{false};
+};
+
+std::size_t appendResponseBytes(char* bytes, std::size_t size, std::size_t count, void* context) {
+    auto& writer = *static_cast<ResponseWriter*>(context);
+    if (size != 0 && count > writer.maximumBytes / size) {
+        writer.exceeded = true;
+        return 0;
+    }
+    const auto byteCount = size * count;
+    if (byteCount > writer.maximumBytes || writer.destination->size() > writer.maximumBytes - byteCount) {
+        writer.exceeded = true;
+        return 0;
+    }
+    writer.destination->append(bytes, byteCount);
+    return byteCount;
+}
+
 int cancelTransfer(void* context, curl_off_t, curl_off_t, curl_off_t, curl_off_t) {
     return static_cast<const CancellationToken*>(context)->isCancellationRequested() ? 1 : 0;
 }
@@ -127,24 +148,25 @@ Outcome<HttpResponse> QuestHttpClient::send(const HttpRequest& request,
     CurlHandle curl;
     if (curl.get() == nullptr) {
         return Outcome<HttpResponse>::failure(
-            {ErrorCode::Internal, "BeatFlow could not initialize its network client.", true, std::nullopt});
+            {ErrorCode::Internal, "BeatNext could not initialize its network client.", true, std::nullopt});
     }
 
     CurlHeaders headers;
     for (const auto& [name, value] : request.headers) {
         if (!headers.append(name + ": " + value)) {
             return Outcome<HttpResponse>::failure(
-                {ErrorCode::Internal, "BeatFlow could not prepare the request headers.", true, std::nullopt});
+                {ErrorCode::Internal, "BeatNext could not prepare the request headers.", true, std::nullopt});
         }
     }
 
     std::string body;
     std::string rawHeaders;
+    ResponseWriter responseWriter{&body, request.maximumResponseBytes};
     std::array<char, CURL_ERROR_SIZE> errorDetails{};
     const auto& caBundle = androidCaBundle();
     if (caBundle.empty()) {
         return Outcome<HttpResponse>::failure({ErrorCode::Internal,
-                                               "BeatFlow could not load the system certificate store.", true,
+                                               "BeatNext could not load the system certificate store.", true,
                                                std::nullopt});
     }
     curl_blob caInfo{const_cast<char*>(caBundle.data()), caBundle.size(), CURL_BLOB_NOCOPY};
@@ -158,8 +180,8 @@ Outcome<HttpResponse> QuestHttpClient::send(const HttpRequest& request,
     curl_easy_setopt(curl.get(), CURLOPT_SSL_VERIFYHOST, 2L);
     curl_easy_setopt(curl.get(), CURLOPT_CAINFO_BLOB, &caInfo);
     curl_easy_setopt(curl.get(), CURLOPT_ACCEPT_ENCODING, "");
-    curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, appendBytes);
-    curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &body);
+    curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, appendResponseBytes);
+    curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &responseWriter);
     curl_easy_setopt(curl.get(), CURLOPT_HEADERFUNCTION, appendBytes);
     curl_easy_setopt(curl.get(), CURLOPT_HEADERDATA, &rawHeaders);
     curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER, errorDetails.data());
@@ -180,6 +202,11 @@ Outcome<HttpResponse> QuestHttpClient::send(const HttpRequest& request,
     if (cancellation.isCancellationRequested()) {
         return Outcome<HttpResponse>::failure(
             {ErrorCode::Cancelled, "The network request was cancelled.", false, std::nullopt});
+    }
+    if (responseWriter.exceeded) {
+        return Outcome<HttpResponse>::failure({ErrorCode::InvalidResponse,
+                                               "The server response exceeded BeatNext's safety limit.", false,
+                                               std::nullopt});
     }
     if (curlStatus != CURLE_OK) {
         return Outcome<HttpResponse>::failure(curlError(curlStatus, errorDetails));
@@ -206,4 +233,4 @@ Outcome<HttpResponse> QuestHttpClient::send(const HttpRequest& request,
     return Outcome<HttpResponse>::success(std::move(translated));
 }
 
-} // namespace beatflow::quest
+} // namespace beatnext::quest

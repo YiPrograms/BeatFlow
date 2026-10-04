@@ -1,22 +1,20 @@
 #include "Test.hpp"
 
-#include "beatflow/services/BeatSaverCatalog.hpp"
-#include "beatflow/services/OAuthClient.hpp"
-#include "beatflow/services/YouTubeMusicProvider.hpp"
+#include "beatnext/services/BeatSaverCatalog.hpp"
+#include "beatnext/services/YouTubeMusicProvider.hpp"
 
 #include <fstream>
-#include <limits>
 #include <queue>
 #include <sstream>
 #include <string_view>
 #include <unordered_map>
 
-using namespace beatflow;
+using namespace beatnext;
 
 namespace {
 
 std::string fixture(const std::string& name) {
-    std::ifstream input(std::string(BEATFLOW_FIXTURE_DIR) + "/" + name);
+    std::ifstream input(std::string(BEATNEXT_FIXTURE_DIR) + "/" + name);
     std::ostringstream contents;
     contents << input.rdbuf();
     return contents.str();
@@ -36,27 +34,6 @@ class FakeHttp final : public HttpClient {
         auto result = std::move(responses.front());
         responses.pop();
         return result;
-    }
-};
-
-class MemoryCredentials final : public CredentialStore {
-  public:
-    OAuthClientCredentials client{"client-id", "client-secret"};
-    std::optional<OAuthTokens> tokens;
-
-    Outcome<OAuthClientCredentials> loadClientCredentials() override {
-        return Outcome<OAuthClientCredentials>::success(client);
-    }
-    Outcome<std::optional<OAuthTokens>> loadTokens() override {
-        return Outcome<std::optional<OAuthTokens>>::success(tokens);
-    }
-    Outcome<bool> saveTokens(const OAuthTokens& value) override {
-        tokens = value;
-        return Outcome<bool>::success(true);
-    }
-    Outcome<bool> clearTokens() override {
-        tokens.reset();
-        return Outcome<bool>::success(true);
     }
 };
 
@@ -100,19 +77,6 @@ std::optional<std::string> headerValue(const HttpRequest& request, std::string_v
 
 } // namespace
 
-BF_TEST("YouTube Home parser ignores non-track cards and keeps track metadata") {
-    FakeHttp http;
-    YouTubeMusicProvider provider(http);
-    const auto result = provider.parseTracks(fixture("youtube_home.json"), "Home");
-    BF_REQUIRE(result.ok());
-    BF_REQUIRE(result.value().size() == 1);
-    BF_REQUIRE(result.value().front().providerId == "video-idol");
-    BF_REQUIRE(result.value().front().title == "Idol");
-    BF_REQUIRE(result.value().front().durationSeconds == 214);
-    BF_REQUIRE(!result.value().front().artists.empty());
-    BF_REQUIRE(result.value().front().artists.front() == "YOASOBI");
-}
-
 BF_TEST("YouTube radio parser reads playlist-panel tracks") {
     FakeHttp http;
     YouTubeMusicProvider provider(http);
@@ -138,7 +102,7 @@ BF_TEST("YouTube search parser treats shelf headings as containers") {
 BF_TEST("YouTube search and Up Next work without a connected account") {
     FakeHttp http;
     YouTubeMusicProvider provider(http);
-    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_home.json")}));
+    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_search.json")}));
     http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_radio.json")}));
     CancellationSource cancellation;
 
@@ -165,7 +129,7 @@ BF_TEST("YouTube requests retain a marked stale result while offline") {
     FakeHttp http;
     MemoryCache cache;
     YouTubeMusicProvider provider(http, &cache);
-    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_home.json")}));
+    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_search.json")}));
     http.responses.push(Outcome<HttpResponse>::failure({ErrorCode::Network, "offline", true, std::nullopt}));
     CancellationSource cancellation;
 
@@ -183,7 +147,7 @@ BF_TEST("YouTube requests discard corrupt cache envelopes") {
     FakeHttp http;
     MemoryCache cache;
     YouTubeMusicProvider provider(http, &cache);
-    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_home.json")}));
+    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_search.json")}));
     http.responses.push(Outcome<HttpResponse>::failure({ErrorCode::Network, "offline", true, std::nullopt}));
     CancellationSource cancellation;
 
@@ -195,71 +159,6 @@ BF_TEST("YouTube requests discard corrupt cache envelopes") {
     BF_REQUIRE(!result.ok());
     BF_REQUIRE(result.error().code == ErrorCode::Network);
     BF_REQUIRE(cache.values.empty());
-}
-
-BF_TEST("personalized YouTube Music Home still requires a connected account") {
-    FakeHttp http;
-    YouTubeMusicProvider provider(http);
-    CancellationSource cancellation;
-
-    const auto result = provider.home(cancellation.token());
-
-    BF_REQUIRE(!result.ok());
-    BF_REQUIRE(result.error().code == ErrorCode::Authentication);
-    BF_REQUIRE(http.requests.empty());
-}
-
-BF_TEST("connected For You reads likes with OAuth and expands them through anonymous radio") {
-    FakeHttp http;
-    MemoryCredentials credentials;
-    credentials.tokens = OAuthTokens{"access", "refresh", "Bearer", std::numeric_limits<std::int64_t>::max()};
-    OAuthClient oauth(http, credentials);
-    YouTubeMusicProvider provider(http, oauth);
-    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_channels.json")}));
-    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_likes.json")}));
-    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_radio.json")}));
-    CancellationSource cancellation;
-
-    const auto result = provider.home(cancellation.token());
-
-    BF_REQUIRE(result.ok());
-    BF_REQUIRE(result.value().size() == 3);
-    BF_REQUIRE(http.requests.size() == 3);
-    BF_REQUIRE(headerValue(http.requests[0], "Authorization") == "Bearer access");
-    BF_REQUIRE(headerValue(http.requests[1], "Authorization") == "Bearer access");
-    BF_REQUIRE(http.requests[0].url.find("youtube/v3/channels") != std::string::npos);
-    BF_REQUIRE(http.requests[1].url.find("youtube/v3/playlistItems") != std::string::npos);
-    BF_REQUIRE(!headerValue(http.requests[2], "Authorization").has_value());
-    BF_REQUIRE(http.requests[2].url.find("/next?") != std::string::npos);
-    BF_REQUIRE(http.requests[2].url.find("&key=") != std::string::npos);
-    BF_REQUIRE(result.value().front().sourceShelf == "Your liked videos");
-    BF_REQUIRE(result.value().back().sourceShelf == "Recommended from your likes");
-}
-
-BF_TEST("personalized caches cannot cross account token namespaces") {
-    FakeHttp http;
-    MemoryCache cache;
-    MemoryCredentials credentials;
-    credentials.tokens =
-        OAuthTokens{"access-a", "refresh-a", "Bearer", std::numeric_limits<std::int64_t>::max()};
-    OAuthClient oauth(http, credentials);
-    YouTubeMusicProvider provider(http, oauth, nullptr, &cache);
-    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_channels.json")}));
-    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_likes.json")}));
-    http.responses.push(Outcome<HttpResponse>::success({200, {}, fixture("youtube_radio.json")}));
-    CancellationSource cancellation;
-
-    const auto accountA = provider.home(cancellation.token());
-    BF_REQUIRE(accountA.ok());
-    BF_REQUIRE(cache.values.size() == 2);
-
-    credentials.tokens =
-        OAuthTokens{"access-b", "refresh-b", "Bearer", std::numeric_limits<std::int64_t>::max()};
-    http.responses.push(Outcome<HttpResponse>::failure({ErrorCode::Network, "offline", true, std::nullopt}));
-    const auto accountB = provider.home(cancellation.token());
-
-    BF_REQUIRE(!accountB.ok());
-    BF_REQUIRE(accountB.error().code == ErrorCode::Network);
 }
 
 BF_TEST("YouTube parser reports malformed JSON without throwing") {
@@ -299,64 +198,4 @@ BF_TEST("BeatSaver cache envelopes fall back with stale map metadata") {
     BF_REQUIRE(!fresh.value().front().stale);
     BF_REQUIRE(stale.ok());
     BF_REQUIRE(stale.value().front().stale);
-}
-
-BF_TEST("device authorization persists completed OAuth tokens") {
-    FakeHttp http;
-    MemoryCredentials credentials;
-    OAuthClient oauth(http, credentials);
-    http.responses.push(Outcome<HttpResponse>::success(
-        {200,
-         {},
-         R"({"device_code":"device","user_code":"ABCD-EFGH","verification_url":"https://google.com/device","expires_in":1800,"interval":5})"}));
-    http.responses.push(Outcome<HttpResponse>::success(
-        {200,
-         {},
-         R"({"access_token":"access","refresh_token":"refresh","expires_in":3600,"token_type":"Bearer"})"}));
-
-    CancellationSource cancellation;
-    const auto authorization = oauth.begin(cancellation.token());
-    BF_REQUIRE(authorization.ok());
-    BF_REQUIRE(authorization.value().userCode == "ABCD-EFGH");
-    BF_REQUIRE(http.requests.at(0).url == "https://oauth2.googleapis.com/device/code");
-    const auto poll = oauth.poll(authorization.value(), cancellation.token());
-    BF_REQUIRE(poll.ok());
-    BF_REQUIRE(http.requests.at(1).body.find("device_code=device") != std::string::npos);
-    BF_REQUIRE(http.requests.at(1).body.find(
-                   "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code") != std::string::npos);
-    BF_REQUIRE(poll.value().status == AuthorizationStatus::Complete);
-    BF_REQUIRE(credentials.tokens.has_value());
-    BF_REQUIRE(credentials.tokens->refreshToken == "refresh");
-}
-
-BF_TEST("OAuth pending response remains a non-error state") {
-    FakeHttp http;
-    MemoryCredentials credentials;
-    OAuthClient oauth(http, credentials);
-    http.responses.push(Outcome<HttpResponse>::success({400, {}, R"({"error":"authorization_pending"})"}));
-    CancellationSource cancellation;
-    const DeviceAuthorization authorization{"device", "code", "url", 1800, 5};
-    const auto poll = oauth.poll(authorization, cancellation.token());
-    BF_REQUIRE(poll.ok());
-    BF_REQUIRE(poll.value().status == AuthorizationStatus::Pending);
-}
-
-BF_TEST("expired OAuth access tokens refresh and persist before use") {
-    FakeHttp http;
-    MemoryCredentials credentials;
-    credentials.tokens = OAuthTokens{"expired", "refresh", "Bearer", 0};
-    OAuthClient oauth(http, credentials);
-    http.responses.push(Outcome<HttpResponse>::success(
-        {200, {}, R"({"access_token":"renewed","expires_in":3600,"token_type":"Bearer"})"}));
-    CancellationSource cancellation;
-
-    const auto authorization = oauth.accessToken(cancellation.token());
-
-    BF_REQUIRE(authorization.ok());
-    BF_REQUIRE(authorization.value() == "Bearer renewed");
-    BF_REQUIRE(credentials.tokens.has_value());
-    BF_REQUIRE(credentials.tokens->accessToken == "renewed");
-    BF_REQUIRE(credentials.tokens->refreshToken == "refresh");
-    BF_REQUIRE(http.requests.size() == 1);
-    BF_REQUIRE(http.requests.front().url.find("oauth2.googleapis.com/token") != std::string::npos);
 }

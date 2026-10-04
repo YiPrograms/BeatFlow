@@ -5,12 +5,12 @@
     "sharedDir": "shared",
     "dependenciesDir": "extern",
     "info": {
-      "name": "BeatFlow",
-      "id": "BeatFlow",
+      "name": "BeatNext",
+      "id": "BeatNext",
       "version": "0.1.0",
-      "url": "https://github.com/yiprograms/BeatFlow",
+      "url": "https://github.com/YiPrograms/BeatNext",
       "additionalData": {
-        "overrideSoName": "libBeatFlow.so",
+        "overrideSoName": "libBeatNext.so",
         "cmake": true
       }
     },
@@ -33,7 +33,7 @@
         "./extern/libs"
       ],
       "qmodIncludeFiles": [],
-      "qmodOutput": "BeatFlow.qmod"
+      "qmodOutput": "BeatNext.qmod"
     },
     "dependencies": [
       {

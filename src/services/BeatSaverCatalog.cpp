@@ -1,6 +1,6 @@
-#include "beatflow/services/BeatSaverCatalog.hpp"
+#include "beatnext/services/BeatSaverCatalog.hpp"
 
-#include "beatflow/core/TextNormalizer.hpp"
+#include "beatnext/core/TextNormalizer.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -10,7 +10,7 @@
 #include <iomanip>
 #include <sstream>
 
-namespace beatflow {
+namespace beatnext {
 namespace {
 
 using Json = nlohmann::json;
@@ -94,7 +94,7 @@ Outcome<std::vector<MapCandidate>> BeatSaverCatalog::search(const Track& track,
     HttpRequest request;
     request.url = "https://api.beatsaver.com/search/text/0?q=" + urlEncode(query) +
                   "&sortOrder=Relevance&automapper=false";
-    request.headers = {{"Accept", "application/json"}, {"User-Agent", "BeatFlow/0.1"}};
+    request.headers = {{"Accept", "application/json"}, {"User-Agent", "BeatNext/0.1"}};
     request.timeoutSeconds = 20;
     auto response = http_.send(request, cancellation);
     if (response && response.value().status >= 200 && response.value().status < 300) {
@@ -203,4 +203,4 @@ Outcome<std::vector<MapCandidate>> BeatSaverCatalog::parseSearchResponse(const s
     }
 }
 
-} // namespace beatflow
+} // namespace beatnext

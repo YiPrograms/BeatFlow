@@ -17,9 +17,6 @@ env:
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      BEATFLOW_OAUTH_CLIENT_ID: ${{ secrets.BEATFLOW_OAUTH_CLIENT_ID }}
-      BEATFLOW_OAUTH_CLIENT_SECRET: ${{ secrets.BEATFLOW_OAUTH_CLIENT_SECRET }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,8 +41,6 @@ jobs:
           scripts/check-format.sh
       - name: Pinned Quest build
         run: |
-          test -n "$BEATFLOW_OAUTH_CLIENT_ID"
-          test -n "$BEATFLOW_OAUTH_CLIENT_SECRET"
           qpm restore
           qpm ndk resolve -d
           cmake --preset quest-release
@@ -55,10 +50,10 @@ jobs:
         run: |
           cd dist
           sha256sum --check SHA256SUMS
-          unzip -t BeatFlow-0.1.0.qmod
+          unzip -t BeatNext-0.1.0.qmod
       - uses: actions/upload-artifact@v4
         with:
-          name: BeatFlow-${{ inputs.ref }}
+          name: BeatNext-${{ inputs.ref }}
           path: dist/
           if-no-files-found: error
       - name: Create draft release
@@ -66,4 +61,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "${{ inputs.ref }}" dist/* \
-            --draft --verify-tag --generate-notes --title "BeatFlow ${{ inputs.ref }}"
+            --draft --verify-tag --generate-notes --title "BeatNext ${{ inputs.ref }}"

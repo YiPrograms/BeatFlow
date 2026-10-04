@@ -1,63 +1,22 @@
 # Testing
 
-## Automated checks
+## Automated
 
-Run the portable suite and formatting check on every change:
+Portable tests cover Unicode normalization, aliases, remixes, short versions, missing durations, Standard-map compatibility, requirements, ranking, deduplication, exclusions, anonymous search/radio parsing, malformed responses, stale caches, archive safety, retry behavior, and recommendation-session generations and item states.
 
-```sh
-cmake --preset portable-debug
-cmake --build --preset portable-debug
-ctest --preset portable-debug
-scripts/check-format.sh
-```
+CI runs formatting, portable tests, the pinned Quest build, package inspection, and checksum validation.
 
-Fixture tests cover liked-playlist account data, mixed music shelves, radio and search parsing,
-malformed responses, anonymous auth headers, device authorization, refresh, offline cache fallback,
-corrupt cache envelopes, map metadata,
-multilingual identity, duration boundaries, remix and cover conflicts, duplicates, difficulty/NPS
-boundaries, cancellation, server backoff, atomic storage, bounded workers, and unsafe ZIP paths.
+## Quest 3 acceptance
 
-Quest integration changes also require:
+1. Install BeatNext and dependencies on Beat Saber `1.40.8_7379`.
+2. Open **Mods → BeatNext** and toggle each screen independently; restart to verify persistence.
+3. Play built-in and custom solo songs. Pause each and confirm the large right-side panel appears without obscuring Pause controls.
+4. Scroll a long recommendation list, select several rows, and verify full Unicode titles, artists, artwork, mapper, rating, and Standard difficulties.
+5. Download from Pause. Cancel the exit confirmation and verify the run remains paused; repeat and confirm exit.
+6. Verify Solo opens with the downloaded map selected on the first attempt.
+7. Finish a song successfully and repeat installed and uninstalled flows from Results. Verify native result controls remain usable.
+8. Fail, quit, and enter multiplayer; verify the Results panel does not appear.
+9. Test network loss, empty radio results, failed archives, and SongCore refresh errors. Beat Saber navigation must remain usable.
+10. Repeat several recommendation chains while observing frame time and memory. There must be no synchronous gameplay work, sustained regression, stale panel, or growing memory use.
 
-```sh
-qpm restore
-cmake --preset quest-release
-cmake --build --preset quest-release
-python3 scripts/package.py --build-dir build/quest
-```
-
-Inspect the generated QMOD manifest and confirm that the native library is arm64, stripped in the QMOD,
-and accompanied by detached symbols.
-
-## Quest 3 acceptance pass
-
-Use a clean Beat Saber `1.40.8_7379` installation and record the game version, headset model, OS build,
-QMOD checksum, and dependency versions.
-
-1. Install BeatFlow and its declared dependencies; launch and open its Mods menu entry.
-2. Without credentials, play a built-in song and a custom song. Pause each and verify the read-only Up
-   Next panel appears, then finish and verify the interactive Up Next shelf appears.
-3. Toggle each Up Next display option independently and verify it affects only its named surface.
-4. Select an uninstalled recommendation, verify progress, choose a difficulty on the normal details
-   screen, play it, finish, and continue for several rounds.
-5. Fail a song, quit a song, and play multiplayer. Confirm no shelf appears and normal navigation works.
-6. Select **Sign in with Google**, confirm the Quest browser opens to the exact verification URL, enter
-   the displayed code, return to Beat Saber, and verify completion. Also test **Browser** reopening,
-   expiry, cancel, token refresh, reconnect, Disconnect, and Clear local data.
-7. Browse For You, change every difficulty and NPS filter, select installed and uninstalled maps, and
-   verify loading, empty, filtered, offline, cached, retry, and malformed-response states.
-8. Interrupt a download and restart Beat Saber. Confirm there is no partial song and a retry succeeds.
-9. Switch scenes, close the view during requests, replay a level, and chain recommendations. Confirm no
-   stale callback changes the current screen.
-10. Compare the same map with prefetch enabled and disabled. Capture frame times and memory across
-   repeated rounds; require no synchronous gameplay-thread network/disk work, sustained frame-time
-   regression, or growing memory.
-11. Capture real screenshots only after the corresponding screen and behavior pass.
-
-Quest 2, 3S, and Pro remain unverified until this same loop is recorded on each model.
-
-## Fixture hygiene
-
-Prefer small synthetic responses that preserve the renderer shape under test. Before committing a real
-response, replace account names, IDs, playlist IDs, history, likes, library contents, tokens, cookies,
-authorization headers, and unique tracking values. A fixture must never require network access.
+Quest 2, Quest 3S, and Quest Pro remain unverified until this sequence is recorded on each device.

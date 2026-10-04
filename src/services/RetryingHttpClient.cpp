@@ -1,4 +1,4 @@
-#include "beatflow/services/RetryingHttpClient.hpp"
+#include "beatnext/services/RetryingHttpClient.hpp"
 
 #include <algorithm>
 #include <charconv>
@@ -6,7 +6,7 @@
 #include <string_view>
 #include <thread>
 
-namespace beatflow {
+namespace beatnext {
 namespace {
 
 bool defaultSleep(std::chrono::milliseconds delay, const CancellationToken& cancellation) {
@@ -101,4 +101,4 @@ std::chrono::milliseconds RetryingHttpClient::delayFor(const Outcome<HttpRespons
     return std::chrono::milliseconds(std::min<long long>(delayedCount, maximumCount));
 }
 
-} // namespace beatflow
+} // namespace beatnext

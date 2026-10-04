@@ -75,7 +75,7 @@ def main() -> None:
 
     build_dir = arguments.build_dir.resolve()
     output_dir = arguments.output_dir.resolve()
-    source_library = build_dir / "libBeatFlow.so"
+    source_library = build_dir / "libBeatNext.so"
     if not source_library.is_file():
         raise SystemExit(f"Missing {source_library}; build the quest-release preset first.")
 
@@ -88,14 +88,14 @@ def main() -> None:
     if compatibility_data.get("beatSaberPackageVersion") != manifest["packageVersion"]:
         raise SystemExit("release/compatibility.json does not match the Beat Saber package version.")
     output_dir.mkdir(parents=True, exist_ok=True)
-    qmod = output_dir / f"BeatFlow-{version}.qmod"
-    symbols = output_dir / f"libBeatFlow-{version}.so.debug"
+    qmod = output_dir / f"BeatNext-{version}.qmod"
+    symbols = output_dir / f"libBeatNext-{version}.so.debug"
     compatibility = output_dir / "compatibility.json"
 
     objcopy = find_llvm_tool("llvm-objcopy")
     strip = find_llvm_tool("llvm-strip")
-    with tempfile.TemporaryDirectory(prefix="beatflow-package-") as temporary:
-        stripped = Path(temporary) / "libBeatFlow.so"
+    with tempfile.TemporaryDirectory(prefix="beatnext-package-") as temporary:
+        stripped = Path(temporary) / "libBeatNext.so"
         shutil.copy2(source_library, stripped)
         run(objcopy, "--only-keep-debug", str(source_library), str(symbols))
         run(strip, "--strip-unneeded", str(stripped))

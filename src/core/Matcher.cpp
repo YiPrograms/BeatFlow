@@ -1,4 +1,4 @@
-#include "beatflow/core/Matcher.hpp"
+#include "beatnext/core/Matcher.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-namespace beatflow {
+namespace beatnext {
 namespace {
 
 double clamp01(double value) {
@@ -76,9 +76,8 @@ std::vector<std::string_view> titleAliases(std::string_view title) {
 
 Matcher::Matcher(ScoringWeights weights) : weights_(weights) {}
 
-std::optional<RecommendedMap> Matcher::evaluate(const Track& track, const MapCandidate& map,
-                                                const RecommendationFilters& filters) const {
-    const auto playable = playableDifficulties(map, filters);
+std::optional<RecommendedMap> Matcher::evaluate(const Track& track, const MapCandidate& map) const {
+    const auto playable = playableDifficulties(map);
     if (playable.empty() || map.automapper) {
         return std::nullopt;
     }
@@ -109,7 +108,7 @@ std::optional<RecommendedMap> Matcher::evaluate(const Track& track, const MapCan
     }
 
     scores.quality = quality(map);
-    scores.suitability = suitability(playable, filters);
+    scores.suitability = suitability(playable);
     scores.finalScore = clamp01(track.providerRelevance) * weights_.providerFinal +
                         scores.quality * weights_.qualityFinal +
                         scores.suitability * weights_.suitabilityFinal;
@@ -117,22 +116,11 @@ std::optional<RecommendedMap> Matcher::evaluate(const Track& track, const MapCan
     return RecommendedMap{track, map, scores, playable, false};
 }
 
-std::vector<MapDifficulty> Matcher::playableDifficulties(const MapCandidate& map,
-                                                         const RecommendationFilters& filters) const {
+std::vector<MapDifficulty> Matcher::playableDifficulties(const MapCandidate& map) const {
     std::vector<MapDifficulty> result;
     std::copy_if(map.difficulties.begin(), map.difficulties.end(), std::back_inserter(result),
-                 [&filters](const MapDifficulty& difficulty) {
-                     if (filters.standardOnly && difficulty.characteristic != "Standard") {
-                         return false;
-                     }
-                     if (!filters.difficulties.empty() &&
-                         !filters.difficulties.contains(difficulty.difficulty)) {
-                         return false;
-                     }
-                     if (filters.minimumNps && difficulty.notesPerSecond < *filters.minimumNps) {
-                         return false;
-                     }
-                     if (filters.maximumNps && difficulty.notesPerSecond > *filters.maximumNps) {
+                 [](const MapDifficulty& difficulty) {
+                     if (difficulty.characteristic != "Standard") {
                          return false;
                      }
                      return difficulty.requirements.empty();
@@ -179,29 +167,15 @@ double Matcher::quality(const MapCandidate& map) const {
     return clamp01(result);
 }
 
-double Matcher::suitability(const std::vector<MapDifficulty>& difficulties,
-                            const RecommendationFilters& filters) const {
+double Matcher::suitability(const std::vector<MapDifficulty>& difficulties) const {
     if (difficulties.empty()) {
         return 0.0;
     }
-    if (!filters.minimumNps && !filters.maximumNps && filters.difficulties.empty()) {
-        return std::min(1.0, 0.72 + static_cast<double>(difficulties.size()) * 0.07);
-    }
-
-    if (filters.minimumNps && filters.maximumNps) {
-        const double center = (*filters.minimumNps + *filters.maximumNps) / 2.0;
-        const double halfRange = std::max(0.5, (*filters.maximumNps - *filters.minimumNps) / 2.0);
-        double best = 0.0;
-        for (const auto& difficulty : difficulties) {
-            best = std::max(best, 1.0 - std::abs(difficulty.notesPerSecond - center) / (halfRange * 2.0));
-        }
-        return clamp01(best);
-    }
-    return 1.0;
+    return std::min(1.0, 0.72 + static_cast<double>(difficulties.size()) * 0.07);
 }
 
 bool Matcher::recordingMarkersCompatible(const NormalizedText& track, const NormalizedText& map) const {
     return track.recordingMarkers == map.recordingMarkers;
 }
 
-} // namespace beatflow
+} // namespace beatnext

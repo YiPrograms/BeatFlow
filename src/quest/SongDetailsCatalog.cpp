@@ -1,6 +1,6 @@
-#include "beatflow/quest/SongDetailsCatalog.hpp"
+#include "beatnext/quest/SongDetailsCatalog.hpp"
 
-#include "beatflow/core/TextNormalizer.hpp"
+#include "beatnext/core/TextNormalizer.hpp"
 
 #include "song-details/shared/SongDetails.hpp"
 
@@ -10,7 +10,7 @@
 #include <string_view>
 #include <unordered_set>
 
-namespace beatflow::quest {
+namespace beatnext::quest {
 namespace {
 
 std::string lowerAscii(std::string value) {
@@ -181,4 +181,4 @@ Outcome<std::vector<MapCandidate>> SongDetailsCatalog::search(const Track& track
     return fallback_.search(track, cancellation);
 }
 
-} // namespace beatflow::quest
+} // namespace beatnext::quest

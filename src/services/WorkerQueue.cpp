@@ -1,8 +1,8 @@
-#include "beatflow/services/WorkerQueue.hpp"
+#include "beatnext/services/WorkerQueue.hpp"
 
 #include <utility>
 
-namespace beatflow {
+namespace beatnext {
 
 WorkerQueue::WorkerQueue(std::size_t workerCount, std::size_t maximumQueuedTasks)
     : maximumQueuedTasks_(maximumQueuedTasks) {
@@ -67,4 +67,4 @@ void WorkerQueue::run() {
     }
 }
 
-} // namespace beatflow
+} // namespace beatnext

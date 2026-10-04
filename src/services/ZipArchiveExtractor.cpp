@@ -1,6 +1,6 @@
-#include "beatflow/services/ZipArchiveExtractor.hpp"
+#include "beatnext/services/ZipArchiveExtractor.hpp"
 
-#include "beatflow/services/ZipArchiveValidator.hpp"
+#include "beatnext/services/ZipArchiveValidator.hpp"
 
 #include <array>
 #include <fstream>
@@ -8,7 +8,7 @@
 #include <string_view>
 #include <zlib.h>
 
-namespace beatflow {
+namespace beatnext {
 namespace {
 
 constexpr std::uint32_t kLocalFileSignature = 0x04034b50U;
@@ -173,4 +173,4 @@ Outcome<bool> ZipArchiveExtractor::extract(std::span<const std::uint8_t> archive
     return Outcome<bool>::success(true);
 }
 
-} // namespace beatflow
+} // namespace beatnext

@@ -1,0 +1,9 @@
+<vertical preferred-width='75' preferred-height='55' child-expand-height='false' spacing='3'
+          xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+          xsi:noNamespaceSchemaLocation='https://raw.githubusercontent.com/RedBrumbler/Quest-BSML-Docs/gh-pages/schema.xsd'>
+  <text text='Up Next display' align='Center' font-size='5'/>
+  <text text='Recommendations are prepared anonymously from the song you are playing.'
+        align='Center' font-size='3.5' word-wrapping='true' preferred-height='10'/>
+  <toggle-setting text='Show Up Next on score screen' value='showOnScore' apply-on-change='true'/>
+  <toggle-setting text='Show Up Next on pause screen' value='showOnPause' apply-on-change='true'/>
+</vertical>

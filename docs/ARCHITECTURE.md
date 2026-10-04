@@ -1,103 +1,37 @@
 # Architecture
 
-BeatFlow has three layers and one composition point. Dependencies point inward, and the portable core
-has no knowledge of Beat Saber, Unity, IL2CPP, Android, or BSML.
+BeatNext has three layers and one composition point. Dependencies point inward, and Unity or IL2CPP types never enter the portable core.
 
 ```text
-Quest hooks and BSML
-        │
-        ▼
-CompositionRoot ── service adapters ── YouTube / Google / BeatSaver / storage
-        │
-        ▼
-portable recommendation core
+Quest lifecycle and UI → recommendation session → portable recommendation engine
+          ↓                         ↓                         ↓
+  SongCore/navigation       downloads and caches      YouTube + BeatSaver ports
 ```
 
 ## Portable core
 
-`include/beatflow/core` and `src/core` contain plain value types and deterministic policy:
+`RecommendationEngine` accepts a plain `CurrentSong`, resolves it through anonymous YouTube Music search, fetches the track radio, and matches each track against BeatSaver. Identity is established from title, artist, recording markers, and duration before map quality affects ranking. The core returns at most 20 unique map hashes and excludes the current and already-played maps.
 
-- `TextNormalizer` preserves Unicode and meaningful recording markers while removing presentation
-  noise.
-- `Matcher` proves song identity before applying map quality and difficulty suitability.
-- `RecommendationEngine` orchestrates personalized seeds, search, radio, map lookup, filtering,
-  deduplication, and session exclusions.
-- `CancellationSource` and `CancellationToken` carry cooperative cancellation without a platform type.
-- `Outcome<T>` and `ServiceError` make user-actionable failure categories explicit.
+`RecommendationSession` is the single observable UI state. Each level starts a new generation. Completion, selection, and download updates must carry that generation, so callbacks from an older level are rejected. Subscribers receive immutable snapshots outside the session lock.
 
-Scoring constants live with the matcher instead of being spread across adapters. A candidate must pass
-the identity threshold before popularity, votes, or curation can improve its final rank. Remix, cover,
-live, instrumental, acoustic, nightcore, sped-up, slowed, and shortened markers participate in identity
-so a popular alternate recording cannot outrank the intended song.
+## Services
 
-## Service adapters
+`YouTubeMusicProvider` implements only anonymous InnerTube `search` and `next`. `SongDetailsCatalog` prefers the local SongDetails database and falls back to BeatSaver search. HTTP retries are bounded and honor server backoff. Anonymous response caches are bounded, versioned JSON envelopes written atomically.
 
-`include/beatflow/services` and `src/services` implement external boundaries:
+`QuestMapInstaller` implements the narrow `MapInstaller` boundary. It stages and validates archives before publishing them to SongCore's preferred custom-song directory. It rejects unsafe paths, links, excessive file counts, and archives without `Info.dat`. `SongSelectionNavigator` separately owns navigation into Solo.
 
-- `YouTubeMusicProvider` sends anonymous InnerTube `search` and `next` requests. For You reads the
-  account's liked-videos playlist through the official YouTube Data API and expands bounded seeds with
-  anonymous radio.
-- `OAuthClient` owns device authorization, expiry, polling, refresh, and disconnect semantics.
-- `SongDetailsCatalog` searches the complete on-device BeatSaver metadata cache used by
-  BetterSongSearch, including bilingual title aliases. `BeatSaverCatalog` is the network fallback.
-- `RetryingHttpClient` applies bounded retries, cancellation, and `Retry-After` delays.
-- `AtomicJsonCache` provides bounded, atomic files and rebuilds corrupt entries at the adapter boundary.
-- `ZipArchiveValidator` inspects central-directory paths and size bounds before extraction.
-- `WorkerQueue` bounds concurrency and pending work.
+## Quest integration
 
-The adapters depend on `HttpClient`, `CredentialStore`, and `CacheStore` interfaces. Tests replace those
-boundaries with in-memory fakes; production binds them to Quest implementations.
+`CompositionRoot` constructs the provider, catalog, library, engine, worker queue, and session. It contains no browsing mode, account state, filters, or UI-specific recommendation list.
 
-## Quest integration and composition
+At solo level start, the lifecycle adapter starts one cancellable recommendation generation. Results and Pause create independent floating-screen hosts for the same `UpNextPanelController`; closing either screen destroys its host and subscription. Network and matching run on the bounded worker queue. Unity updates, SongCore UI transitions, and image work run on the main thread.
 
-`CompositionRoot` is the single production composition point. It owns the HTTP stack, caches,
-credentials, providers, recommendation engine, SongCore adapter, worker queue, cancellation sources,
-and per-session played hashes. Other Quest classes request operations from this root; they do not find
-services through a general registry.
+`SongSelectionNavigator` owns the post-download transition. It waits until SongCore resolves the hash, closes the source screen through Beat Saber's normal controls, configures Solo, waits for active level-selection controllers, explicitly selects the level, and verifies the selected object.
 
-`LevelLifecycle` hooks solo level startup, pause presentation, and successful results activation.
-Startup submits anonymous metadata prefetch. The pause hook adds a read-only, text-only panel and the
-results hook adds an interactive `RecommendedNextPanel`; neither replaces Beat Saber's controls. The
-menu flow uses `ForYouViewController` for personalized and expanded results.
+## Conventions
 
-`QuestSongLibrary` validates a downloaded ZIP, extracts into a unique staging directory, checks the
-resulting tree and `Info.dat`, and renames the completed directory into SongCore's custom-level folder.
-It then asks SongCore to refresh and hands the hash to the normal level-selection UI.
-
-`QuestCredentialStore` receives the app's Google limited-input-device OAuth client metadata from the
-generated build configuration. It keeps a one-time encrypted file import as a compatibility path for
-older self-builds. `AndroidKeystore` creates a non-exportable AES key for player OAuth tokens. Ordinary
-configuration and caches never contain those tokens.
-
-## Threading and lifecycle
-
-Network, parsing, matching, cache access, downloads, and SongCore refresh run on a bounded two-thread
-queue. Quest worker threads attach to IL2CPP for the duration of a task. BSML's main-thread scheduler is
-the only path for UI mutations.
-
-Interactive and gameplay-prefetch operations have separate cancellation sources and monotonically
-increasing generations. Starting another request, closing the view, or starting another level cancels
-the old source. Every asynchronous UI publication checks both source identity and generation, which
-prevents a late response from a previous scene from replacing current state.
-
-Gameplay prefetch stops at metadata and matching. Artwork decode, archive installation, SongCore
-refresh, and song selection happen only in menu or results scenes.
-
-## Caching and failure behavior
-
-Anonymous music, personalized music, and BeatSaver data use separate bounded cache directories.
-Personalized entries include an opaque namespace derived from the account's refresh token, preventing
-one connected account from reading another account's cached feed. Provider entries wrap the raw
-response with a schema version and timestamp. Network and refresh errors may fall back to a valid entry;
-resulting tracks and maps carry a stale bit that reaches the UI as `Cached/offline`. Invalid envelopes
-are removed and rebuilt.
-
-Errors include a category, message, retryability, and optional retry delay. UI text tells the player
-whether to connect, retry, change filters, or continue without Up Next. Beat Saber navigation never
-depends on a recommendation request succeeding.
-
-## Extending the design
-
-A new music source implements `MusicProvider`; a new map source implements `MapCatalog`. Keep provider
-response shapes and authentication rules in the adapter. Add portable behavior only when it represents
-source-independent recommendation policy. Avoid adding a plugin framework or another composition root.
+- Types own one responsibility and receive external dependencies through constructors.
+- Portable code uses plain value types and `Outcome<T>` errors.
+- UI observes session snapshots; it does not start provider requests or mutate caches directly.
+- Worker callbacks carry cancellation plus a generation. Stale results are discarded.
+- Comments explain lifecycle ordering, provider quirks, and security decisions rather than restating code.

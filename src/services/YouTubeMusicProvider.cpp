@@ -1,4 +1,4 @@
-#include "beatflow/services/YouTubeMusicProvider.hpp"
+#include "beatnext/services/YouTubeMusicProvider.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -11,16 +11,14 @@
 #include <sstream>
 #include <unordered_set>
 
-namespace beatflow {
+namespace beatnext {
 namespace {
 
 using Json = nlohmann::json;
 
 constexpr auto kApiBase = "https://music.youtube.com/youtubei/v1/";
-constexpr auto kYouTubeDataApiBase = "https://www.googleapis.com/youtube/v3/";
 // This is YouTube Music's public web client key, matching the WEB_REMIX client used by ytmusicapi.
 constexpr auto kWebClientKey = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30";
-constexpr std::size_t kPersonalizedRadioSeeds = 6;
 
 std::string webClientVersion() {
     const auto now = std::chrono::system_clock::now();
@@ -276,9 +274,7 @@ void walkRenderers(const Json& value, const std::string& source, std::vector<Tra
 ServiceError httpError(const HttpResponse& response) {
     ErrorCode code = ErrorCode::Network;
     bool retryable = response.status == 429 || response.status >= 500;
-    if (response.status == 401 || response.status == 403) {
-        code = ErrorCode::Authentication;
-    } else if (response.status == 429) {
+    if (response.status == 429) {
         code = ErrorCode::RateLimited;
     } else if (response.status >= 400 && response.status < 500) {
         code = ErrorCode::InvalidResponse;
@@ -313,161 +309,12 @@ std::int64_t nowEpochSeconds() {
         .count();
 }
 
-std::string urlEncode(std::string_view value) {
-    constexpr char digits[] = "0123456789ABCDEF";
-    std::string result;
-    result.reserve(value.size());
-    for (const unsigned char character : value) {
-        if (std::isalnum(character) != 0 || character == '-' || character == '_' || character == '.' ||
-            character == '~') {
-            result.push_back(static_cast<char>(character));
-        } else {
-            result.push_back('%');
-            result.push_back(digits[character >> 4U]);
-            result.push_back(digits[character & 0x0FU]);
-        }
-    }
-    return result;
-}
-
-std::string removeTopicSuffix(std::string value) {
-    constexpr std::string_view suffix = " - Topic";
-    if (value.ends_with(suffix)) {
-        value.resize(value.size() - suffix.size());
-    }
-    return value;
-}
-
 } // namespace
 
 YouTubeMusicProvider::YouTubeMusicProvider(HttpClient& http, CacheStore* anonymousCache, std::string language,
                                            std::string location)
-    : http_(http), oauth_(nullptr), anonymousCache_(anonymousCache), accountCache_(nullptr),
-      language_(std::move(language)), location_(std::move(location)) {}
-
-YouTubeMusicProvider::YouTubeMusicProvider(HttpClient& http, OAuthClient& oauth, CacheStore* anonymousCache,
-                                           CacheStore* accountCache, std::string language,
-                                           std::string location)
-    : http_(http), oauth_(&oauth), anonymousCache_(anonymousCache), accountCache_(accountCache),
-      language_(std::move(language)), location_(std::move(location)) {}
-
-Outcome<std::vector<Track>> YouTubeMusicProvider::home(const CancellationToken& cancellation) {
-    auto seeds = likedVideos(cancellation);
-    if (!seeds) {
-        return seeds;
-    }
-
-    std::vector<Track> recommendations = seeds.value();
-    std::unordered_set<std::string> seen;
-    for (const auto& seed : seeds.value()) {
-        seen.insert(seed.providerId);
-    }
-    const auto limit = std::min(kPersonalizedRadioSeeds, seeds.value().size());
-    for (std::size_t index = 0; index < limit && !cancellation.isCancellationRequested(); ++index) {
-        auto related = radio(seeds.value()[index].providerId, cancellation);
-        if (!related) {
-            if (related.error().code == ErrorCode::Cancelled) {
-                return related;
-            }
-            continue;
-        }
-        for (auto& track : related.value()) {
-            if (!track.providerId.empty() && seen.insert(track.providerId).second) {
-                track.sourceShelf = "Recommended from your likes";
-                recommendations.push_back(std::move(track));
-            }
-        }
-    }
-    return Outcome<std::vector<Track>>::success(std::move(recommendations));
-}
-
-Outcome<std::vector<Track>> YouTubeMusicProvider::likedVideos(const CancellationToken& cancellation) {
-    auto channel =
-        accountGet(std::string(kYouTubeDataApiBase) + "channels?part=contentDetails&mine=true", cancellation);
-    if (!channel) {
-        return Outcome<std::vector<Track>>::failure(channel.error());
-    }
-
-    try {
-        const auto channelJson = Json::parse(channel.value().body);
-        const auto& items = channelJson.at("items");
-        if (!items.is_array() || items.empty()) {
-            return Outcome<std::vector<Track>>::failure(
-                {ErrorCode::NotFound,
-                 "This Google account does not have a YouTube channel with a liked-videos playlist.", false,
-                 std::nullopt});
-        }
-        const auto playlistId =
-            items.front().at("contentDetails").at("relatedPlaylists").at("likes").get<std::string>();
-        if (playlistId.empty()) {
-            return Outcome<std::vector<Track>>::failure(
-                {ErrorCode::NotFound, "This account's liked-videos playlist is unavailable.", false,
-                 std::nullopt});
-        }
-
-        const auto url =
-            std::string(kYouTubeDataApiBase) +
-            "playlistItems?part=snippet%2CcontentDetails&maxResults=50&playlistId=" + urlEncode(playlistId);
-        auto playlist = accountGet(url, cancellation);
-        if (!playlist) {
-            return Outcome<std::vector<Track>>::failure(playlist.error());
-        }
-
-        const auto playlistJson = Json::parse(playlist.value().body);
-        std::vector<Track> tracks;
-        std::unordered_set<std::string> seen;
-        for (const auto& item : playlistJson.value("items", Json::array())) {
-            if (!item.is_object() || !item.contains("snippet")) {
-                continue;
-            }
-            const auto& snippet = item["snippet"];
-            auto videoId = item.value("contentDetails", Json::object()).value("videoId", "");
-            if (videoId.empty()) {
-                videoId = snippet.value("resourceId", Json::object()).value("videoId", "");
-            }
-            const auto title = snippet.value("title", "");
-            if (videoId.empty() || title.empty() || title == "Deleted video" || title == "Private video" ||
-                !seen.insert(videoId).second) {
-                continue;
-            }
-
-            Track track;
-            track.providerId = std::move(videoId);
-            track.title = title;
-            const auto artist = removeTopicSuffix(snippet.value("videoOwnerChannelTitle", ""));
-            if (!artist.empty()) {
-                track.artists.push_back(artist);
-            }
-            track.sourceShelf = "Your liked videos";
-            track.providerRelevance = std::max(0.55, 1.0 - static_cast<double>(tracks.size()) / 100.0);
-            track.stale = channel.value().stale || playlist.value().stale;
-            if (snippet.contains("thumbnails") && snippet["thumbnails"].is_object()) {
-                int bestWidth = -1;
-                for (const auto& [_, thumbnail] : snippet["thumbnails"].items()) {
-                    if (thumbnail.is_object() && thumbnail.contains("url") && thumbnail["url"].is_string()) {
-                        const auto width = thumbnail.value("width", 0);
-                        if (width >= bestWidth) {
-                            bestWidth = width;
-                            track.artworkUrl = thumbnail["url"].get<std::string>();
-                        }
-                    }
-                }
-            }
-            tracks.push_back(std::move(track));
-        }
-        if (tracks.empty()) {
-            return Outcome<std::vector<Track>>::failure(
-                {ErrorCode::NotFound, "No usable videos were found in this account's liked-videos playlist.",
-                 false, std::nullopt});
-        }
-        return Outcome<std::vector<Track>>::success(std::move(tracks));
-    } catch (const std::exception& exception) {
-        return Outcome<std::vector<Track>>::failure(
-            {ErrorCode::InvalidResponse,
-             std::string("YouTube returned incomplete account data: ") + exception.what(), false,
-             std::nullopt});
-    }
-}
+    : http_(http), anonymousCache_(anonymousCache), language_(std::move(language)),
+      location_(std::move(location)) {}
 
 Outcome<std::vector<Track>> YouTubeMusicProvider::search(const std::string& query,
                                                          const CancellationToken& cancellation) {
@@ -528,7 +375,7 @@ YouTubeMusicProvider::rawRequest(const std::string& endpoint, const std::string&
     request.url = std::string(kApiBase) + endpoint + "?alt=json&key=" + kWebClientKey;
     request.headers = {{"Content-Type", "application/json"},
                        {"Origin", "https://music.youtube.com"},
-                       {"User-Agent", "Mozilla/5.0 BeatFlow/0.1"},
+                       {"User-Agent", "Mozilla/5.0 BeatNext/0.1"},
                        {"X-Youtube-Client-Name", "67"},
                        {"X-Youtube-Client-Version", clientVersion},
                        {"X-Goog-Request-Time", std::to_string(std::time(nullptr))}};
@@ -569,66 +416,6 @@ YouTubeMusicProvider::rawRequest(const std::string& endpoint, const std::string&
     return Outcome<RawResponse>::failure(*failure);
 }
 
-Outcome<YouTubeMusicProvider::RawResponse>
-YouTubeMusicProvider::accountGet(const std::string& url, const CancellationToken& cancellation) {
-    if (cancellation.isCancellationRequested()) {
-        return Outcome<RawResponse>::failure(
-            {ErrorCode::Cancelled, "The YouTube account request was cancelled.", false, std::nullopt});
-    }
-    if (oauth_ == nullptr) {
-        return Outcome<RawResponse>::failure({ErrorCode::Authentication,
-                                              "Connect YouTube to request personalized recommendations.",
-                                              false, std::nullopt});
-    }
-
-    auto accountNamespace = oauth_->accountCacheNamespace();
-    if (!accountNamespace) {
-        return Outcome<RawResponse>::failure(accountNamespace.error());
-    }
-    const auto key = cacheKey("youtube_data", url, "account_" + accountNamespace.value());
-    std::optional<ServiceError> failure;
-    auto authorization = oauth_->accessToken(cancellation);
-    if (!authorization) {
-        failure = authorization.error();
-    } else {
-        HttpRequest request;
-        request.url = url;
-        request.headers = {{"Accept", "application/json"},
-                           {"Authorization", std::move(authorization).value()},
-                           {"User-Agent", "BeatFlow/0.1"}};
-        request.timeoutSeconds = 20;
-        auto response = http_.send(request, cancellation);
-        if (!response) {
-            failure = response.error();
-        } else if (response.value().status < 200 || response.value().status >= 300) {
-            failure = httpError(response.value());
-        } else {
-            if (accountCache_ != nullptr) {
-                const Json envelope{
-                    {"schema", 1}, {"stored_at", nowEpochSeconds()}, {"body", response.value().body}};
-                static_cast<void>(accountCache_->write(key, envelope.dump()));
-            }
-            return Outcome<RawResponse>::success({std::move(response.value().body), false});
-        }
-    }
-
-    if (!cancellation.isCancellationRequested() && accountCache_ != nullptr) {
-        auto cached = accountCache_->read(key);
-        if (cached) {
-            try {
-                const auto envelope = Json::parse(cached.value());
-                if (envelope.value("schema", 0) == 1 && envelope.contains("body") &&
-                    envelope["body"].is_string()) {
-                    return Outcome<RawResponse>::success({envelope["body"].get<std::string>(), true});
-                }
-            } catch (...) {
-            }
-            static_cast<void>(accountCache_->remove(key));
-        }
-    }
-    return Outcome<RawResponse>::failure(*failure);
-}
-
 Outcome<std::vector<Track>> YouTubeMusicProvider::request(const std::string& endpoint,
                                                           const std::string& payload,
                                                           const std::string& source,
@@ -657,4 +444,4 @@ std::string YouTubeMusicProvider::contextPayload(const std::string& clientVersio
     return context.dump();
 }
 
-} // namespace beatflow
+} // namespace beatnext

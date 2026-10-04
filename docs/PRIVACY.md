@@ -1,54 +1,17 @@
 # Privacy
 
-BeatFlow has no telemetry, analytics, advertising, crash upload, or project-operated backend.
+BeatNext has no accounts, Google sign-in, telemetry, analytics, advertising, crash upload, cookies, or project-operated backend.
 
-## Without an account
+For Up Next, the headset sends anonymous search and radio requests directly to YouTube Music and map metadata/download requests directly to BeatSaver. These services receive normal network information such as the headset's IP address and request headers. YouTube Music's InnerTube interface is unofficial and can change without notice.
 
-Up Next sends song title and artist search terms to YouTube Music's anonymous InnerTube `search`
-endpoint, then sends the resolved video identifier to its `next` endpoint. Candidate maps are found in
-SongDetails' on-device BeatSaver catalog; map archives and covers are downloaded from BeatSaver's CDN.
-These services receive normal network information such as the headset's IP address. BeatFlow stores
-bounded response caches locally so useful results can survive an outage.
-
-## With optional YouTube Music connection
-
-The release build contains the app's Google **TVs and Limited Input devices** OAuth client metadata.
-Selecting **Sign in with Google** starts Google's device authorization flow, opens its verification
-page in the Quest browser, and uses the YouTube scope to obtain access and refresh tokens. The token is
-sent only to the official YouTube Data API to read the connected channel's liked-videos playlist.
-BeatFlow expands a bounded set of liked videos with anonymous song radio. It does not read private
-YouTube Music Home shelves or listening history.
-
-Player OAuth tokens are stored in an AES-GCM encrypted file whose key is generated and retained by
-Android Keystore. Personalized response caches are stored separately from anonymous and BeatSaver
-caches. BeatFlow never receives the player's Google password.
-
-## Local files
-
-BeatFlow uses this directory:
+BeatNext stores only local settings, bounded anonymous response caches, and temporary staged downloads under:
 
 ```text
-/sdcard/ModData/com.beatgames.beatsaber/Mods/BeatFlow/
-├── oauth_tokens.enc       encrypted access and refresh tokens
-├── settings.json          Up Next display preferences
-├── cache/maps/            bounded BeatSaver response cache
-├── cache/music/           bounded anonymous InnerTube response cache
-├── cache/accounts/        bounded personalized response cache
-└── staging/               incomplete map installations
+/sdcard/ModData/com.beatgames.beatsaber/Mods/BeatNext/
+├── settings.json
+├── cache/music/
+├── cache/maps/
+└── staging/
 ```
 
-Downloaded maps are installed into SongCore's configured custom-level folder and therefore outlive a
-BeatFlow data clear.
-
-## Delete data
-
-**Disconnect** removes player tokens and personalized caches. **Clear local data** also removes
-anonymous music and BeatSaver caches and staging files. Removing the entire BeatFlow mod-data directory
-after uninstall deletes the same local data.
-
-## Unofficial interface
-
-YouTube Music's InnerTube interface is unofficial and can change without notice. BeatFlow sends only
-anonymous search and radio operations to it. Optional account access uses Google's documented YouTube
-Data API. BeatFlow does not scrape cookies or ask the player to export browser headers. Review Google's
-and BeatSaver's privacy terms to understand their handling of direct requests.
+Downloaded maps are published to SongCore's custom-song directory. Removing BeatNext's mod-data directory clears its settings, caches, and staging files but does not delete installed custom songs.

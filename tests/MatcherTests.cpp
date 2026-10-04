@@ -1,9 +1,9 @@
 #include "Test.hpp"
 
-#include "beatflow/core/Matcher.hpp"
-#include "beatflow/core/TextNormalizer.hpp"
+#include "beatnext/core/Matcher.hpp"
+#include "beatnext/core/TextNormalizer.hpp"
 
-using namespace beatflow;
+using namespace beatnext;
 
 namespace {
 
@@ -39,7 +39,7 @@ BF_TEST("normalizer preserves Unicode and removes presentation noise") {
 
 BF_TEST("exact multilingual track matches the corresponding map") {
     Matcher matcher;
-    auto result = matcher.evaluate(track("アイドル", "YOASOBI", 214), map("アイドル", "YOASOBI", 214), {});
+    auto result = matcher.evaluate(track("アイドル", "YOASOBI", 214), map("アイドル", "YOASOBI", 214));
     BF_REQUIRE(result.has_value());
     BF_REQUIRE(result->scores.identity > 0.95);
 }
@@ -47,7 +47,7 @@ BF_TEST("exact multilingual track matches the corresponding map") {
 BF_TEST("bilingual provider titles match an English BeatSaver title alias") {
     Matcher matcher;
     auto result =
-        matcher.evaluate(track("残機 - Time Left", "ZUTOMAYO", 232), map("Time Left", "ZUTOMAYO", 232), {});
+        matcher.evaluate(track("残機 - Time Left", "ZUTOMAYO", 232), map("Time Left", "ZUTOMAYO", 232));
     BF_REQUIRE(result.has_value());
     BF_REQUIRE(result->scores.title > 0.95);
 }
@@ -55,22 +55,19 @@ BF_TEST("bilingual provider titles match an English BeatSaver title alias") {
 BF_TEST("recording markers prevent a popular remix from replacing an exact song") {
     Matcher matcher;
     auto result =
-        matcher.evaluate(track("Idol", "YOASOBI", 214), map("Idol (Nightcore Remix)", "YOASOBI", 175), {});
+        matcher.evaluate(track("Idol", "YOASOBI", 214), map("Idol (Nightcore Remix)", "YOASOBI", 175));
     BF_REQUIRE(!result.has_value());
 }
 
-BF_TEST("difficulty and NPS filters retain only playable Standard maps") {
+BF_TEST("matcher retains compatible Standard difficulties only") {
     Matcher matcher;
     auto candidate = map("Idol", "YOASOBI", 214);
     candidate.difficulties.push_back({Difficulty::Hard, "Standard", 3.8, {"Noodle Extensions"}});
     candidate.difficulties.push_back({Difficulty::Hard, "OneSaber", 3.7, {}});
-    RecommendationFilters filters;
-    filters.difficulties = {Difficulty::Expert};
-    filters.minimumNps = 4.5;
-    filters.maximumNps = 5.5;
-    const auto playable = matcher.playableDifficulties(candidate, filters);
-    BF_REQUIRE(playable.size() == 1);
+    const auto playable = matcher.playableDifficulties(candidate);
+    BF_REQUIRE(playable.size() == 2);
     BF_REQUIRE(playable.front().difficulty == Difficulty::Expert);
+    BF_REQUIRE(playable.back().difficulty == Difficulty::ExpertPlus);
 }
 
 BF_TEST("missing duration is neutral rather than a false rejection") {
@@ -79,7 +76,7 @@ BF_TEST("missing duration is neutral rather than a false rejection") {
     source.durationSeconds.reset();
     auto candidate = map("Cheerleader", "Porter Robinson");
     candidate.durationSeconds.reset();
-    auto result = matcher.evaluate(source, candidate, {});
+    auto result = matcher.evaluate(source, candidate);
     BF_REQUIRE(result.has_value());
     BF_REQUIRE_NEAR(result->scores.duration, 0.65, 0.001);
 }

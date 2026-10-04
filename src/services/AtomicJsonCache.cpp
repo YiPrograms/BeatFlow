@@ -1,4 +1,4 @@
-#include "beatflow/services/AtomicJsonCache.hpp"
+#include "beatnext/services/AtomicJsonCache.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -6,7 +6,7 @@
 #include <system_error>
 #include <vector>
 
-namespace beatflow {
+namespace beatnext {
 namespace {
 
 ServiceError storageError(std::string message) {
@@ -190,4 +190,4 @@ Outcome<bool> AtomicJsonCache::prune(const std::filesystem::path& preserved) {
     return Outcome<bool>::success(true);
 }
 
-} // namespace beatflow
+} // namespace beatnext

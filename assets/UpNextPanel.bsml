@@ -1,0 +1,56 @@
+<vertical preferred-width='84' preferred-height='54' bg='round-rect-panel' pad='1.5' spacing='0.6'
+          child-expand-height='false' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+          xsi:noNamespaceSchemaLocation='https://raw.githubusercontent.com/RedBrumbler/Quest-BSML-Docs/gh-pages/schema.xsd'>
+  <text id='headingText' text='Up Next' font-size='4.5' align='Center' preferred-height='6'/>
+  <text id='statusText' text='Finding recommendations…' font-size='3.2' align='Center'
+        preferred-height='5' word-wrapping='true'/>
+  <horizontal preferred-height='40' child-expand-height='true' spacing='1.2'>
+    <vertical preferred-width='43'>
+      <scroll-view preferred-height='40'>
+        <vertical child-expand-height='false' spacing='0.5'>
+          <button id='item0Button' on-click='Select0' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item1Button' on-click='Select1' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item2Button' on-click='Select2' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item3Button' on-click='Select3' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item4Button' on-click='Select4' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item5Button' on-click='Select5' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item6Button' on-click='Select6' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item7Button' on-click='Select7' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item8Button' on-click='Select8' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item9Button' on-click='Select9' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item10Button' on-click='Select10' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item11Button' on-click='Select11' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item12Button' on-click='Select12' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item13Button' on-click='Select13' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item14Button' on-click='Select14' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item15Button' on-click='Select15' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item16Button' on-click='Select16' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item17Button' on-click='Select17' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item18Button' on-click='Select18' text='Recommendation' preferred-height='8' font-size='3.3'/>
+          <button id='item19Button' on-click='Select19' text='Recommendation' preferred-height='8' font-size='3.3'/>
+        </vertical>
+      </scroll-view>
+    </vertical>
+    <vertical preferred-width='37' bg='round-rect-panel' pad='1.5' spacing='0.5' child-expand-height='false'>
+      <text id='detailTitleText' text='Select a recommendation' font-size='3.8' align='Center'
+            preferred-height='8' word-wrapping='true'/>
+      <text id='detailArtistText' text='' font-size='3.2' color='#DDDDDD' align='Center'
+            preferred-height='5' word-wrapping='true'/>
+      <image id='detailImage' preferred-width='15' preferred-height='15' preserve-aspect='true'/>
+      <text id='detailMetaText' text='' font-size='3' align='Center' preferred-height='5' word-wrapping='true'/>
+      <text id='detailDifficultyText' text='' font-size='3' align='Center' preferred-height='5' word-wrapping='true'/>
+      <primary-button id='actionButton' on-click='Action' text='Open in Solo' preferred-height='6' font-size='3.5'/>
+    </vertical>
+  </horizontal>
+  <modal id='confirmModal' size-delta-x='72' size-delta-y='34'>
+    <vertical pad='4' spacing='2'>
+      <text text='Leave this song?' align='Center' font-size='5'/>
+      <text text='The map is ready. Leave the current run and open it in Solo?'
+            align='Center' font-size='3.5' word-wrapping='true' preferred-height='10'/>
+      <horizontal>
+        <primary-button text='Leave and open' on-click='ConfirmExit'/>
+        <button text='Stay here' on-click='CancelExit'/>
+      </horizontal>
+    </vertical>
+  </modal>
+</vertical>

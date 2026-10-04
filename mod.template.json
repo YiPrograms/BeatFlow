@@ -1,11 +1,11 @@
 {
   "_QPVersion": "1.1.0",
-  "name": "BeatFlow",
-  "id": "BeatFlow",
+  "name": "BeatNext",
+  "id": "BeatNext",
   "modloader": "Scotland2",
   "author": "Yi Programs and contributors",
   "version": "${version}",
-  "description": "Song recommendations for Beat Saber, with optional YouTube Music personalization.",
+  "description": "Anonymous Up Next song recommendations for Beat Saber.",
   "packageVersion": "1.40.8_7379",
   "dependencies": [
     {

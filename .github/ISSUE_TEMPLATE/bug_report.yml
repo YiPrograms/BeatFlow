@@ -1,5 +1,5 @@
 name: Bug report
-description: Report reproducible BeatFlow behavior
+description: Report reproducible BeatNext behavior
 title: "[Bug]: "
 labels: [bug]
 body:
@@ -13,7 +13,7 @@ body:
           required: true
   - type: input
     attributes:
-      label: BeatFlow version or commit
+      label: BeatNext version or commit
       placeholder: 0.1.0 or commit SHA
     validations:
       required: true
@@ -59,5 +59,5 @@ body:
   - type: textarea
     attributes:
       label: Sanitized logs
-      description: Do not include OAuth or account data.
+      description: Do not include private data or complete network response bodies.
       render: text

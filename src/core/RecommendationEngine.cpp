@@ -1,12 +1,12 @@
-#include "beatflow/core/RecommendationEngine.hpp"
+#include "beatnext/core/RecommendationEngine.hpp"
 
-#include "beatflow/core/TextNormalizer.hpp"
+#include "beatnext/core/TextNormalizer.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <unordered_set>
 
-namespace beatflow {
+namespace beatnext {
 namespace {
 
 ServiceError cancelledError() {
@@ -57,19 +57,9 @@ std::string stripShortVersionLabel(std::string value) {
 } // namespace
 
 RecommendationEngine::RecommendationEngine(MusicProvider& musicProvider, MapCatalog& mapCatalog,
-                                           SongLibrary* songLibrary, Matcher matcher)
-    : musicProvider_(musicProvider), mapCatalog_(mapCatalog), songLibrary_(songLibrary),
+                                           MapInstaller* mapInstaller, Matcher matcher)
+    : musicProvider_(musicProvider), mapCatalog_(mapCatalog), mapInstaller_(mapInstaller),
       matcher_(std::move(matcher)) {}
-
-Outcome<std::vector<RecommendedMap>> RecommendationEngine::forYou(const RecommendationRequest& request,
-                                                                  const CancellationToken& cancellation,
-                                                                  ProgressCallback onMatch) {
-    auto tracks = musicProvider_.home(cancellation);
-    if (!tracks) {
-        return Outcome<std::vector<RecommendedMap>>::failure(tracks.error());
-    }
-    return recommend(std::move(tracks).value(), request, cancellation, onMatch);
-}
 
 Outcome<std::vector<RecommendedMap>> RecommendationEngine::following(const std::string& trackId,
                                                                      const RecommendationRequest& request,
@@ -85,10 +75,13 @@ Outcome<std::vector<RecommendedMap>> RecommendationEngine::following(const std::
 }
 
 Outcome<std::vector<RecommendedMap>>
-RecommendationEngine::upNext(const std::string& currentTitle, const std::string& currentArtist,
-                             std::optional<int> currentDurationSeconds, const RecommendationRequest& request,
-                             const CancellationToken& cancellation, ProgressCallback onMatch) {
-    auto currentTrack = resolveTrack(currentTitle, currentArtist, currentDurationSeconds, cancellation);
+RecommendationEngine::recommendAfter(const CurrentSong& currentSong, const RecommendationRequest& request,
+                                     const CancellationToken& cancellation, ProgressCallback onMatch) {
+    if (cancellation.isCancellationRequested()) {
+        return Outcome<std::vector<RecommendedMap>>::failure(cancelledError());
+    }
+    auto currentTrack =
+        resolveTrack(currentSong.title, currentSong.artist, currentSong.durationSeconds, cancellation);
     if (!currentTrack) {
         return Outcome<std::vector<RecommendedMap>>::failure(currentTrack.error());
     }
@@ -122,7 +115,7 @@ Outcome<Track> RecommendationEngine::resolveTrack(const std::string& title, cons
             comparable.rating = 1.0;
             comparable.upvotes = 100;
             comparable.difficulties.push_back({Difficulty::Easy, "Standard", 1.0, {}});
-            auto result = matcher_.evaluate(identityTarget, comparable, {});
+            auto result = matcher_.evaluate(identityTarget, comparable);
             if (result && result->scores.identity > bestIdentity) {
                 bestIdentity = result->scores.identity;
                 best = candidate;
@@ -210,11 +203,11 @@ Outcome<std::vector<RecommendedMap>> RecommendationEngine::recommend(std::vector
                 seenHashes.contains(normalizedHash)) {
                 continue;
             }
-            auto candidate = matcher_.evaluate(track, map, request.filters);
+            auto candidate = matcher_.evaluate(track, map);
             if (!candidate) {
                 continue;
             }
-            candidate->installed = songLibrary_ != nullptr && songLibrary_->isInstalled(map.hash);
+            candidate->installed = mapInstaller_ != nullptr && mapInstaller_->isInstalled(map.hash);
             if (!best || candidate->scores.finalScore > best->scores.finalScore) {
                 best = std::move(candidate);
             }
@@ -240,4 +233,4 @@ Outcome<std::vector<RecommendedMap>> RecommendationEngine::recommend(std::vector
     return Outcome<std::vector<RecommendedMap>>::success(std::move(recommendations));
 }
 
-} // namespace beatflow
+} // namespace beatnext

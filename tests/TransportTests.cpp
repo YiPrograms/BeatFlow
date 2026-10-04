@@ -1,12 +1,12 @@
 #include "Test.hpp"
 
-#include "beatflow/services/HttpHeaders.hpp"
-#include "beatflow/services/RetryingHttpClient.hpp"
-#include "beatflow/services/ZipArchiveValidator.hpp"
+#include "beatnext/services/HttpHeaders.hpp"
+#include "beatnext/services/RetryingHttpClient.hpp"
+#include "beatnext/services/ZipArchiveValidator.hpp"
 
 #include <queue>
 
-using namespace beatflow;
+using namespace beatnext;
 
 namespace {
 

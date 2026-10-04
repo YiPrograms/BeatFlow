@@ -8,7 +8,7 @@
 #include <utility>
 #include <vector>
 
-namespace beatflow::test {
+namespace beatnext::test {
 
 struct TestCase {
     std::string name;
@@ -43,16 +43,16 @@ inline void requireNear(double actual, double expected, double tolerance, const 
     }
 }
 
-} // namespace beatflow::test
+} // namespace beatnext::test
 
 #define BF_JOIN_INNER(left, right) left##right
 #define BF_JOIN(left, right) BF_JOIN_INNER(left, right)
 #define BF_TEST(name)                                                                                        \
-    static void BF_JOIN(beatflow_test_, __LINE__)();                                                         \
-    static ::beatflow::test::Registrar BF_JOIN(beatflow_registrar_,                                          \
-                                               __LINE__)(name, BF_JOIN(beatflow_test_, __LINE__));           \
-    static void BF_JOIN(beatflow_test_, __LINE__)()
+    static void BF_JOIN(beatnext_test_, __LINE__)();                                                         \
+    static ::beatnext::test::Registrar BF_JOIN(beatnext_registrar_,                                          \
+                                               __LINE__)(name, BF_JOIN(beatnext_test_, __LINE__));           \
+    static void BF_JOIN(beatnext_test_, __LINE__)()
 #define BF_REQUIRE(expression)                                                                               \
-    ::beatflow::test::require(static_cast<bool>(expression), #expression, __FILE__, __LINE__)
+    ::beatnext::test::require(static_cast<bool>(expression), #expression, __FILE__, __LINE__)
 #define BF_REQUIRE_NEAR(actual, expected, tolerance)                                                         \
-    ::beatflow::test::requireNear((actual), (expected), (tolerance), __FILE__, __LINE__)
+    ::beatnext::test::requireNear((actual), (expected), (tolerance), __FILE__, __LINE__)

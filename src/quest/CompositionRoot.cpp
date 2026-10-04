@@ -1,7 +1,6 @@
-#include "beatflow/quest/CompositionRoot.hpp"
+#include "beatnext/quest/CompositionRoot.hpp"
 
-#include "beatflow/quest/BuildConfig.hpp"
-#include "beatflow/quest/Logger.hpp"
+#include "beatnext/quest/Logger.hpp"
 
 #include "GlobalNamespace/BeatmapLevel.hpp"
 #include "beatsaber-hook/shared/utils/il2cpp-functions.hpp"
@@ -15,12 +14,12 @@
 #include <cctype>
 #include <chrono>
 #include <fstream>
-#include <thread>
+#include <future>
 
-namespace beatflow::quest {
+namespace beatnext::quest {
 namespace {
 
-constexpr auto kDataRoot = "/sdcard/ModData/com.beatgames.beatsaber/Mods/BeatFlow";
+constexpr auto kDataRoot = "/sdcard/ModData/com.beatgames.beatsaber/Mods/BeatNext";
 
 std::string lowerAscii(std::string value) {
     std::transform(value.begin(), value.end(), value.begin(),
@@ -29,14 +28,12 @@ std::string lowerAscii(std::string value) {
 }
 
 std::optional<std::string> customHash(GlobalNamespace::BeatmapLevel* level) {
-    if (level == nullptr) {
+    if (level == nullptr)
         return std::nullopt;
-    }
     const std::string id = level->___levelID;
     constexpr std::string_view prefix = "custom_level_";
-    if (!id.starts_with(prefix) || id.size() <= prefix.size()) {
+    if (!id.starts_with(prefix) || id.size() <= prefix.size())
         return std::nullopt;
-    }
     return lowerAscii(id.substr(prefix.size()));
 }
 
@@ -62,13 +59,10 @@ CompositionRoot& CompositionRoot::instance() {
 
 CompositionRoot::CompositionRoot()
     : dataRoot_(kDataRoot), http_(transport_), mapCache_(dataRoot_ / "cache" / "maps"),
-      musicCache_(dataRoot_ / "cache" / "music"), personalizedCache_(dataRoot_ / "cache" / "accounts"),
-      credentials_(dataRoot_, {std::string(build::kOAuthClientId), std::string(build::kOAuthClientSecret)}),
-      oauth_(http_, credentials_), music_(http_, oauth_, &musicCache_, &personalizedCache_),
+      musicCache_(dataRoot_ / "cache" / "music"), music_(http_, &musicCache_),
       beatSaverCatalog_(http_, &mapCache_), catalog_(beatSaverCatalog_),
-      library_(http_, dataRoot_ / "staging"), engine_(music_, catalog_, &library_), workers_(2, 32),
-      interactiveCancellation_(std::make_shared<CancellationSource>()),
-      prefetchCancellation_(std::make_shared<CancellationSource>()) {}
+      mapInstaller_(http_, dataRoot_ / "staging"), engine_(music_, catalog_, &mapInstaller_), workers_(2, 32),
+      sessionCancellation_(std::make_shared<CancellationSource>()) {}
 
 CompositionRoot::~CompositionRoot() {
     shutdown();
@@ -77,9 +71,8 @@ CompositionRoot::~CompositionRoot() {
 void CompositionRoot::initialize() {
     {
         std::scoped_lock lock(stateMutex_);
-        if (initialized_) {
+        if (initialized_)
             return;
-        }
         initialized_ = true;
     }
     std::error_code ignored;
@@ -91,366 +84,139 @@ void CompositionRoot::initialize() {
 void CompositionRoot::shutdown() {
     {
         std::scoped_lock lock(stateMutex_);
-        if (!initialized_) {
+        if (!initialized_)
             return;
-        }
-        interactiveCancellation_->cancel();
-        prefetchCancellation_->cancel();
+        sessionCancellation_->cancel();
         initialized_ = false;
     }
     workers_.stop();
 }
 
-void CompositionRoot::refreshForYou(RecommendationFilters filters, RecommendationCallback callback) {
-    std::shared_ptr<CancellationSource> cancellation;
-    std::uint64_t generation = 0;
-    {
-        std::scoped_lock lock(stateMutex_);
-        interactiveCancellation_->cancel();
-        interactiveCancellation_ = std::make_shared<CancellationSource>();
-        cancellation = interactiveCancellation_;
-        generation = ++interactiveGeneration_;
-        filters_ = std::move(filters);
-        forYouState_ = {{}, std::nullopt, "Personalized For You", true, false};
-        browseState_ = forYouState_;
-        browseMode_ = BrowseMode::ForYou;
-    }
-    logger.info("For You refresh started");
-    dispatch([callback] { callback({{}, std::nullopt, "Personalized For You", true, false}); });
-
-    auto workerCallback = callback;
-    if (!workers_.submit(bindIl2Cpp([this, cancellation, generation, callback = std::move(workerCallback)] {
-            auto operationRequest = request(20);
-            std::vector<RecommendedMap> progressive;
-            auto result = engine_.forYou(
-                operationRequest, cancellation->token(),
-                [this, cancellation, generation, callback, &progressive](const RecommendedMap& match) {
-                    progressive.push_back(match);
-                    RecommendationViewState snapshot{progressive, std::nullopt, "Personalized For You", true,
-                                                     std::ranges::any_of(progressive, [](const auto& item) {
-                                                         return item.track.stale || item.map.stale;
-                                                     })};
-                    dispatch([this, cancellation, generation, callback, snapshot = std::move(snapshot)] {
-                        {
-                            std::scoped_lock lock(stateMutex_);
-                            if (cancellation != interactiveCancellation_ ||
-                                generation != interactiveGeneration_) {
-                                return;
-                            }
-                            forYouState_ = snapshot;
-                            if (browseMode_ == BrowseMode::ForYou) {
-                                browseState_ = snapshot;
-                            }
-                        }
-                        callback(snapshot);
-                    });
-                });
-
-            RecommendationViewState finished;
-            finished.context = "Personalized For You";
-            if (result) {
-                finished.recommendations = std::move(result).value();
-                finished.stale = std::ranges::any_of(finished.recommendations, [](const auto& item) {
-                    return item.track.stale || item.map.stale;
-                });
-            } else if (result.error().code != ErrorCode::Cancelled) {
-                finished.error = result.error();
-            }
-            if (finished.error) {
-                logger.warn("For You refresh failed: {}", finished.error->message);
-            } else {
-                logger.info("For You refresh found {} playable maps", finished.recommendations.size());
-            }
-            dispatch([this, cancellation, generation, callback, finished = std::move(finished)] {
-                {
-                    std::scoped_lock lock(stateMutex_);
-                    if (cancellation != interactiveCancellation_ || generation != interactiveGeneration_) {
-                        return;
-                    }
-                    forYouState_ = finished;
-                    if (browseMode_ == BrowseMode::ForYou) {
-                        browseState_ = finished;
-                    }
-                }
-                callback(finished);
-            });
-        }))) {
-        RecommendationViewState failed{{},
-                                       ServiceError{ErrorCode::Internal,
-                                                    "BeatFlow's worker queue is full. Try again.", true,
-                                                    std::nullopt},
-                                       "Personalized For You",
-                                       false,
-                                       false};
-        dispatch([callback = std::move(callback), failed] { callback(failed); });
-    }
-}
-
-void CompositionRoot::connect(AuthorizationCallback callback) {
-    std::shared_ptr<CancellationSource> cancellation;
-    std::uint64_t generation = 0;
-    {
-        std::scoped_lock lock(stateMutex_);
-        interactiveCancellation_->cancel();
-        interactiveCancellation_ = std::make_shared<CancellationSource>();
-        cancellation = interactiveCancellation_;
-        generation = ++interactiveGeneration_;
-    }
-    dispatch([callback] { callback({"Starting Google device authorization…", "", "", false, true}); });
-
-    auto unavailableCallback = callback;
-    if (!workers_.submit(bindIl2Cpp([this, cancellation, generation, callback = std::move(callback)] {
-            const auto publish = [this, cancellation, generation, callback](AuthorizationViewState state) {
-                dispatch([this, cancellation, generation, callback, state = std::move(state)] {
-                    {
-                        std::scoped_lock lock(stateMutex_);
-                        if (cancellation != interactiveCancellation_ ||
-                            generation != interactiveGeneration_) {
-                            return;
-                        }
-                    }
-                    callback(state);
-                });
-            };
-            auto authorization = oauth_.begin(cancellation->token());
-            if (!authorization) {
-                publish({authorization.error().message, "", "", false, false});
-                return;
-            }
-            const auto device = authorization.value();
-            publish({"The Google sign-in page is opening. Enter this code in the browser.",
-                     device.verificationUrl, device.userCode, false, true});
-
-            auto nextDelay = device.pollingIntervalSeconds;
-            const auto expiresAt =
-                std::chrono::steady_clock::now() + std::chrono::seconds(device.expiresInSeconds);
-            while (!cancellation->isCancellationRequested() && std::chrono::steady_clock::now() < expiresAt) {
-                for (int elapsed = 0; elapsed < nextDelay * 10 && !cancellation->isCancellationRequested();
-                     ++elapsed) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                }
-                if (cancellation->isCancellationRequested()) {
-                    return;
-                }
-                auto poll = oauth_.poll(device, cancellation->token());
-                if (!poll) {
-                    publish({poll.error().message, "", "", false, false});
-                    return;
-                }
-                nextDelay = poll.value().nextPollSeconds;
-                if (poll.value().status == AuthorizationStatus::Pending ||
-                    poll.value().status == AuthorizationStatus::SlowDown) {
-                    continue;
-                }
-                if (poll.value().status != AuthorizationStatus::Complete) {
-                    publish({"Google authorization expired or was denied. Try Connect again.", "", "", false,
-                             false});
-                    return;
-                }
-
-                auto home = music_.home(cancellation->token());
-                if (!home || home.value().empty()) {
-                    const auto message =
-                        home ? "No recommendations were found from this account's liked videos."
-                             : home.error().message;
-                    publish({message, "", "", false, false});
-                    return;
-                }
-                auto radio = music_.radio(home.value().front().providerId, cancellation->token());
-                if (!radio) {
-                    publish({"The account connected, but validation failed: " + radio.error().message, "", "",
-                             false, false});
-                    return;
-                }
-                publish({"YouTube connected. For You is ready from your liked videos.", "", "", true, false});
-                logger.info("Google account validation completed");
-                return;
-            }
-            publish({"The Google device code expired. Select Connect to try again.", "", "", false, false});
-        }))) {
-        dispatch([callback = std::move(unavailableCallback)] {
-            callback({"BeatFlow's worker queue is full. Try Connect again.", "", "", false, false});
-        });
-    }
-}
-
-bool CompositionRoot::hasConnectedAccount() {
-    const auto tokens = credentials_.loadTokens();
-    return tokens && tokens.value().has_value();
-}
-
-void CompositionRoot::cancelInteractive() {
-    std::scoped_lock lock(stateMutex_);
-    interactiveCancellation_->cancel();
-    ++interactiveGeneration_;
-}
-
-Outcome<bool> CompositionRoot::disconnect() {
-    cancelInteractive();
-    auto cleared = credentials_.clearAll();
-    if (!cleared) {
-        return cleared;
-    }
-    auto cache = personalizedCache_.clear();
-    if (cache) {
-        std::scoped_lock lock(stateMutex_);
-        forYouState_ = {};
-        if (browseMode_ == BrowseMode::ForYou) {
-            browseState_ = {};
-        }
-    }
-    return cache;
-}
-
-Outcome<bool> CompositionRoot::clearLocalData() {
-    cancelInteractive();
-    auto account = credentials_.clearAll();
-    if (!account) {
-        return account;
-    }
-    auto maps = mapCache_.clear();
-    if (!maps) {
-        return maps;
-    }
-    auto music = musicCache_.clear();
-    if (!music) {
-        return music;
-    }
-    auto personalized = personalizedCache_.clear();
-    if (!personalized) {
-        return personalized;
-    }
-    std::error_code ignored;
-    std::filesystem::remove_all(dataRoot_ / "staging", ignored);
-    return Outcome<bool>::success(true);
-}
-
-void CompositionRoot::prefetchForLevel(GlobalNamespace::BeatmapLevel* level) {
-    if (level == nullptr) {
+void CompositionRoot::beginLevel(GlobalNamespace::BeatmapLevel* level) {
+    if (level == nullptr)
         return;
-    }
-    const std::string title = level->___songName;
-    const std::string artist = level->___songAuthorName;
-    const auto duration = level->___songDuration > 0.0F
-                              ? std::optional<int>(static_cast<int>(level->___songDuration + 0.5F))
-                              : std::nullopt;
-    if (title.empty() || artist.empty()) {
-        std::scoped_lock lock(stateMutex_);
-        nextState_ = {{},
-                      ServiceError{ErrorCode::NotFound,
-                                   "This level does not include enough song metadata for Up Next.", false,
-                                   std::nullopt},
-                      title,
-                      false,
-                      false};
-        return;
-    }
+    const CurrentSong song{std::string(level->___songName), std::string(level->___songAuthorName),
+                           level->___songDuration > 0.0F
+                               ? std::optional<int>(static_cast<int>(level->___songDuration + 0.5F))
+                               : std::nullopt};
 
     std::shared_ptr<CancellationSource> cancellation;
-    std::uint64_t generation = 0;
     {
         std::scoped_lock lock(stateMutex_);
-        if (const auto hash = customHash(level)) {
+        if (const auto hash = customHash(level))
             playedHashes_.insert(*hash);
-        }
-        prefetchCancellation_->cancel();
-        prefetchCancellation_ = std::make_shared<CancellationSource>();
-        cancellation = prefetchCancellation_;
-        generation = ++prefetchGeneration_;
-        nextState_ = {{}, std::nullopt, "After " + title, true, false};
-        if (browseMode_ == BrowseMode::Next) {
-            browseState_ = nextState_;
-        }
+        sessionCancellation_->cancel();
+        sessionCancellation_ = std::make_shared<CancellationSource>();
+        cancellation = sessionCancellation_;
+    }
+    const auto generation = session_.begin("After " + song.title);
+    if (song.title.empty() || song.artist.empty()) {
+        session_.finish(generation, {},
+                        ServiceError{ErrorCode::NotFound,
+                                     "This level does not include enough song metadata for Up Next.", false,
+                                     std::nullopt});
+        return;
     }
 
-    const bool queued = workers_.submit(bindIl2Cpp([this, cancellation, generation, title, artist, duration] {
-        auto result = engine_.upNext(title, artist, duration, request(20), cancellation->token());
-        RecommendationViewState state;
-        state.context = "After " + title;
-        if (result) {
-            state.recommendations = std::move(result).value();
-            state.stale = std::ranges::any_of(
-                state.recommendations, [](const auto& item) { return item.track.stale || item.map.stale; });
-        } else if (result.error().code != ErrorCode::Cancelled) {
-            state.error = result.error();
-        }
-        std::scoped_lock lock(stateMutex_);
-        if (cancellation == prefetchCancellation_ && generation == prefetchGeneration_) {
-            if (state.error) {
-                logger.warn("Up Next prefetch failed: {}", state.error->message);
-            } else {
-                logger.info("Up Next prefetch found {} playable maps", state.recommendations.size());
+    const bool queued = workers_.submit(bindIl2Cpp([this, cancellation, generation, song] {
+        auto result = engine_.recommendAfter(song, request(), cancellation->token());
+        dispatch([this, cancellation, generation, result = std::move(result)]() mutable {
+            if (cancellation->isCancellationRequested())
+                return;
+            if (result) {
+                const auto count = result.value().size();
+                if (session_.finish(generation, std::move(result).value())) {
+                    logger.info("Up Next prefetch found {} playable maps", count);
+                }
+            } else if (result.error().code != ErrorCode::Cancelled) {
+                if (session_.finish(generation, {}, result.error())) {
+                    logger.warn("Up Next prefetch failed: {}", result.error().message);
+                }
             }
-            nextState_ = state;
-            if (browseMode_ == BrowseMode::Next) {
-                browseState_ = std::move(state);
-            }
-        }
+        });
     }));
     if (!queued) {
-        std::scoped_lock lock(stateMutex_);
-        nextState_ = {{},
-                      ServiceError{ErrorCode::Internal, "BeatFlow could not queue Up Next metadata work.",
-                                   true, std::nullopt},
-                      "After " + title,
-                      false,
-                      false};
+        session_.finish(generation, {},
+                        ServiceError{ErrorCode::Internal, "BeatNext could not queue Up Next metadata work.",
+                                     true, std::nullopt});
     }
 }
 
-RecommendationViewState CompositionRoot::nextState() const {
-    std::scoped_lock lock(stateMutex_);
-    return nextState_;
+RecommendationSessionState CompositionRoot::state() const {
+    return session_.state();
 }
 
-RecommendationViewState CompositionRoot::browseState() const {
-    std::scoped_lock lock(stateMutex_);
-    return browseState_;
+std::uint64_t CompositionRoot::subscribe(StateCallback callback) {
+    return session_.subscribe(std::move(callback));
 }
 
-void CompositionRoot::browseForYouRecommendations() {
-    std::scoped_lock lock(stateMutex_);
-    browseMode_ = BrowseMode::ForYou;
-    browseState_ = forYouState_;
+void CompositionRoot::unsubscribe(std::uint64_t subscription) {
+    session_.unsubscribe(subscription);
 }
 
-void CompositionRoot::browseNextRecommendations() {
-    std::scoped_lock lock(stateMutex_);
-    browseMode_ = BrowseMode::Next;
-    browseState_ = nextState_;
+void CompositionRoot::select(std::size_t index) {
+    static_cast<void>(session_.select(index));
 }
 
-void CompositionRoot::prepare(const RecommendedMap& recommendation, PrepareCallback callback) {
-    auto cancellation = std::make_shared<CancellationSource>();
-    auto workerCallback = callback;
-    if (!workers_.submit(
-            bindIl2Cpp([this, cancellation, recommendation, callback = std::move(workerCallback)] {
-                if (library_.isInstalled(recommendation.map.hash)) {
-                    dispatch([callback, hash = recommendation.map.hash] {
-                        callback(Outcome<std::string>::success(hash));
-                    });
-                    return;
-                }
-                auto installed = library_.install(recommendation.map, cancellation->token());
-                if (installed) {
-                    SongCore::API::Loading::RefreshSongs(false).wait();
-                } else {
-                    logger.warn("Map installation failed: {}", installed.error().message);
-                }
-                dispatch([callback, installed = std::move(installed)]() mutable {
-                    callback(std::move(installed));
-                });
-            }))) {
+void CompositionRoot::prepare(std::size_t index, PrepareCallback callback) {
+    RecommendationItemState item;
+    std::shared_ptr<CancellationSource> cancellation;
+    std::uint64_t generation = 0;
+    const auto snapshot = session_.state();
+    if (index >= snapshot.items.size()) {
         dispatch([callback = std::move(callback)] {
             callback(Outcome<std::string>::failure(
-                {ErrorCode::Internal, "BeatFlow's worker queue is full. Try again.", true, std::nullopt}));
+                {ErrorCode::NotFound, "This recommendation is no longer available.", false, std::nullopt}));
         });
+        return;
     }
-}
+    item = snapshot.items[index];
+    generation = snapshot.generation;
+    {
+        std::scoped_lock lock(stateMutex_);
+        cancellation = sessionCancellation_;
+    }
+    session_.updateItem(generation, index, RecommendationItemStatus::Downloading,
+                        item.recommendation.installed ? "Preparing song…" : "Downloading…");
 
-Outcome<bool> CompositionRoot::openPrepared(const std::string& hash) {
-    rememberPlayed(hash);
-    return library_.openSongDetails(hash);
+    if (!workers_.submit(bindIl2Cpp([this, cancellation, generation, index, item = std::move(item),
+                                     callback = std::move(callback)]() mutable {
+            Outcome<std::string> result = Outcome<std::string>::success(item.recommendation.map.hash);
+            if (!mapInstaller_.isInstalled(item.recommendation.map.hash)) {
+                result = mapInstaller_.install(item.recommendation.map, cancellation->token());
+                if (result) {
+                    const auto refresh = SongCore::API::Loading::RefreshSongs(false);
+                    if (refresh.wait_for(std::chrono::seconds(30)) != std::future_status::ready) {
+                        result = Outcome<std::string>::failure(
+                            {ErrorCode::Internal,
+                             "SongCore did not finish refreshing custom songs within 30 seconds.", true,
+                             std::nullopt});
+                    } else if (!mapInstaller_.isInstalled(result.value())) {
+                        result = Outcome<std::string>::failure(
+                            {ErrorCode::NotFound, "SongCore refreshed but could not load the downloaded map.",
+                             true, std::nullopt});
+                    }
+                }
+            }
+            dispatch([this, cancellation, generation, index, callback = std::move(callback),
+                      result = std::move(result)]() mutable {
+                if (cancellation->isCancellationRequested())
+                    return;
+                const bool current =
+                    result ? session_.updateItem(generation, index, RecommendationItemStatus::Installed,
+                                                 "Installed", true)
+                           : session_.updateItem(generation, index, RecommendationItemStatus::Failed,
+                                                 result.error().message);
+                if (!current)
+                    return;
+                callback(std::move(result));
+            });
+        }))) {
+        session_.updateItem(generation, index, RecommendationItemStatus::Failed,
+                            "BeatNext's worker queue is full.");
+        callback(Outcome<std::string>::failure(
+            {ErrorCode::Internal, "BeatNext's worker queue is full. Try again.", true, std::nullopt}));
+    }
 }
 
 void CompositionRoot::rememberPlayed(const std::string& hash) {
@@ -458,26 +224,14 @@ void CompositionRoot::rememberPlayed(const std::string& hash) {
     playedHashes_.insert(lowerAscii(hash));
 }
 
-RecommendationFilters CompositionRoot::filters() const {
-    std::scoped_lock lock(stateMutex_);
-    return filters_;
-}
-
-void CompositionRoot::setFilters(RecommendationFilters filters) {
-    std::scoped_lock lock(stateMutex_);
-    filters_ = std::move(filters);
-}
-
 bool CompositionRoot::showNextOnResults() const {
     std::scoped_lock lock(stateMutex_);
     return showNextOnResults_;
 }
-
 bool CompositionRoot::showNextOnPause() const {
     std::scoped_lock lock(stateMutex_);
     return showNextOnPause_;
 }
-
 void CompositionRoot::setShowNextOnResults(bool value) {
     {
         std::scoped_lock lock(stateMutex_);
@@ -485,7 +239,6 @@ void CompositionRoot::setShowNextOnResults(bool value) {
     }
     saveDisplaySettings();
 }
-
 void CompositionRoot::setShowNextOnPause(bool value) {
     {
         std::scoped_lock lock(stateMutex_);
@@ -495,40 +248,33 @@ void CompositionRoot::setShowNextOnPause(bool value) {
 }
 
 void CompositionRoot::loadDisplaySettings() {
-    const auto path = dataRoot_ / "settings.json";
-    std::ifstream input(path);
-    if (!input) {
+    std::ifstream input(dataRoot_ / "settings.json");
+    if (!input)
         return;
-    }
     try {
         const auto value = nlohmann::json::parse(input);
         std::scoped_lock lock(stateMutex_);
-        showNextOnResults_ = value.value("showUpNextOnSongEnd", true);
+        showNextOnResults_ = value.value("showUpNextOnScore", true);
         showNextOnPause_ = value.value("showUpNextOnPause", true);
     } catch (...) {
-        // Invalid settings are ignored so the safe defaults remain available.
     }
 }
 
 void CompositionRoot::saveDisplaySettings() const {
-    bool onResults = true;
-    bool onPause = true;
+    bool results = true;
+    bool pause = true;
     {
         std::scoped_lock lock(stateMutex_);
-        onResults = showNextOnResults_;
-        onPause = showNextOnPause_;
+        results = showNextOnResults_;
+        pause = showNextOnPause_;
     }
     const auto path = dataRoot_ / "settings.json";
     const auto temporary = dataRoot_ / "settings.json.tmp";
     std::ofstream output(temporary, std::ios::trunc);
-    if (!output) {
+    if (!output)
         return;
-    }
-    output << nlohmann::json{{"showUpNextOnSongEnd", onResults}, {"showUpNextOnPause", onPause}}.dump(2);
+    output << nlohmann::json{{"showUpNextOnScore", results}, {"showUpNextOnPause", pause}}.dump(2);
     output.close();
-    if (!output) {
-        return;
-    }
     std::error_code error;
     std::filesystem::rename(temporary, path, error);
     if (error) {
@@ -538,11 +284,10 @@ void CompositionRoot::saveDisplaySettings() const {
     }
 }
 
-RecommendationRequest CompositionRoot::request(std::size_t maximumResults) const {
+RecommendationRequest CompositionRoot::request() const {
     std::scoped_lock lock(stateMutex_);
     RecommendationRequest result;
-    result.filters = filters_;
-    result.maximumResults = maximumResults;
+    result.maximumResults = 20;
     result.maximumTracks = 60;
     result.excludedMapHashes = playedHashes_;
     return result;
@@ -552,4 +297,4 @@ void CompositionRoot::dispatch(std::function<void()> callback) {
     BSML::MainThreadScheduler::Schedule(std::move(callback));
 }
 
-} // namespace beatflow::quest
+} // namespace beatnext::quest

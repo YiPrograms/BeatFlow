@@ -1,8 +1,8 @@
 #include "Test.hpp"
 
-#include "beatflow/services/AtomicJsonCache.hpp"
-#include "beatflow/services/WorkerQueue.hpp"
-#include "beatflow/services/ZipArchiveExtractor.hpp"
+#include "beatnext/services/AtomicJsonCache.hpp"
+#include "beatnext/services/WorkerQueue.hpp"
+#include "beatnext/services/ZipArchiveExtractor.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -11,11 +11,11 @@
 #include <future>
 #include <iterator>
 
-using namespace beatflow;
+using namespace beatnext;
 
 BF_TEST("atomic cache rejects unsafe keys and supports overwrite and clear") {
     const auto root = std::filesystem::temp_directory_path() /
-                      ("beatflow-cache-test-" +
+                      ("beatnext-cache-test-" +
                        std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     AtomicJsonCache cache(root, 1024);
     BF_REQUIRE(!cache.write("../escape", "bad").ok());
@@ -32,7 +32,7 @@ BF_TEST("atomic cache rejects unsafe keys and supports overwrite and clear") {
 
 BF_TEST("atomic cache prunes old entries at its configured bound") {
     const auto root = std::filesystem::temp_directory_path() /
-                      ("beatflow-cache-bound-test-" +
+                      ("beatnext-cache-bound-test-" +
                        std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     AtomicJsonCache cache(root, 1024, 2);
     BF_REQUIRE(cache.write("first", "1").ok());
@@ -61,11 +61,11 @@ BF_TEST("bounded worker queue executes accepted work") {
 }
 
 BF_TEST("validated map archive extracts the exact downloaded bytes") {
-    const auto fixture = std::filesystem::path(BEATFLOW_FIXTURE_DIR) / "map_archive.zip";
+    const auto fixture = std::filesystem::path(BEATNEXT_FIXTURE_DIR) / "map_archive.zip";
     std::ifstream input(fixture, std::ios::binary);
     const std::vector<char> bytes(std::istreambuf_iterator<char>(input), {});
     const auto root = std::filesystem::temp_directory_path() /
-                      ("beatflow-extract-test-" +
+                      ("beatnext-extract-test-" +
                        std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     const auto* data = reinterpret_cast<const std::uint8_t*>(bytes.data());
 

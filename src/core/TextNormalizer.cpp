@@ -1,13 +1,13 @@
-#include "beatflow/core/TextNormalizer.hpp"
+#include "beatnext/core/TextNormalizer.hpp"
 
-#include "beatflow/core/Models.hpp"
+#include "beatnext/core/Models.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <sstream>
 #include <unordered_set>
 
-namespace beatflow {
+namespace beatnext {
 namespace {
 
 const std::vector<std::pair<std::string, std::string>> kMarkers{
@@ -168,4 +168,4 @@ NormalizedText TextNormalizer::normalize(std::string_view input, bool stripPrese
     return result;
 }
 
-} // namespace beatflow
+} // namespace beatnext

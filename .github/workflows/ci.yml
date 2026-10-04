@@ -30,9 +30,6 @@ jobs:
   quest:
     name: Pinned Quest build and package
     runs-on: ubuntu-latest
-    env:
-      BEATFLOW_OAUTH_CLIENT_ID: ${{ secrets.BEATFLOW_OAUTH_CLIENT_ID }}
-      BEATFLOW_OAUTH_CLIENT_SECRET: ${{ secrets.BEATFLOW_OAUTH_CLIENT_SECRET }}
     steps:
       - uses: actions/checkout@v4
       - name: Install build tools
@@ -59,10 +56,10 @@ jobs:
         run: |
           cd dist
           sha256sum --check SHA256SUMS
-          unzip -t BeatFlow-0.1.0.qmod
-          test "$(unzip -Z1 BeatFlow-0.1.0.qmod | sort | tr '\n' ' ')" = "libBeatFlow.so mod.json "
+          unzip -t BeatNext-0.1.0.qmod
+          test "$(unzip -Z1 BeatNext-0.1.0.qmod | sort | tr '\n' ' ')" = "libBeatNext.so mod.json "
       - uses: actions/upload-artifact@v4
         with:
-          name: BeatFlow-${{ github.sha }}
+          name: BeatNext-${{ github.sha }}
           path: dist/
           if-no-files-found: error

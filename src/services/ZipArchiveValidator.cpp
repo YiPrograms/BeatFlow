@@ -1,9 +1,9 @@
-#include "beatflow/services/ZipArchiveValidator.hpp"
+#include "beatnext/services/ZipArchiveValidator.hpp"
 
 #include <algorithm>
 #include <string_view>
 
-namespace beatflow {
+namespace beatnext {
 namespace {
 
 constexpr std::uint32_t kCentralFileSignature = 0x02014b50U;
@@ -120,4 +120,4 @@ Outcome<bool> ZipArchiveValidator::validate(std::span<const std::uint8_t> archiv
     return Outcome<bool>::success(true);
 }
 
-} // namespace beatflow
+} // namespace beatnext
