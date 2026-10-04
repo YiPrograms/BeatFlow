@@ -4,10 +4,12 @@
 #include "beatnext/quest/Logger.hpp"
 #include "beatnext/quest/SongSelectionNavigator.hpp"
 
+#include "TMPro/TextOverflowModes.hpp"
 #include "UnityEngine/Canvas.hpp"
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Object.hpp"
 #include "UnityEngine/Quaternion.hpp"
+#include "UnityEngine/Transform.hpp"
 #include "UnityEngine/Vector2.hpp"
 #include "UnityEngine/Vector3.hpp"
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
@@ -31,19 +33,40 @@ SafePtrUnity<BSML::FloatingScreen> resultsScreen;
 SafePtrUnity<BSML::FloatingScreen> pauseScreen;
 SongSelectionNavigator navigator;
 
-constexpr UnityEngine::Vector2 PanelSize{98.0F, 66.0F};
-constexpr float PanelScale = 0.023F;
-constexpr float PanelX = 2.35F;
-constexpr float PanelZ = 3.2F;
-constexpr float ResultsPanelY = 1.62F;
-constexpr float PausePanelY = 1.48F;
+constexpr UnityEngine::Vector2 PanelSize{128.0F, 92.0F};
+constexpr float PanelScale = 0.022F;
+constexpr float PanelRightOffset = 2.25F;
+constexpr float FallbackPanelX = 2.25F;
+constexpr float FallbackPanelZ = 2.8F;
+constexpr float ResultsFallbackY = 1.62F;
+constexpr float PauseFallbackY = 1.48F;
 constexpr float RadiansToDegrees = 57.2957795F;
+
+struct PanelPlacement {
+    UnityEngine::Vector3 position;
+    UnityEngine::Quaternion rotation;
+};
 
 UnityEngine::Quaternion facePlayer(const UnityEngine::Vector3& position) {
     // Beat Saber's menu origin is the player's forward-facing reference point.
     // Positive yaw turns a screen on the player's right back toward that origin.
     const float yaw = std::atan2(position.x, position.z) * RadiansToDegrees;
     return UnityEngine::Quaternion::Euler(0.0F, yaw, 0.0F);
+}
+
+PanelPlacement placeBeside(UnityEngine::Transform* anchor, bool pause) {
+    if (anchor != nullptr) {
+        auto position = anchor->get_position();
+        const auto right = anchor->get_right();
+        position.x += right.x * PanelRightOffset;
+        position.y += right.y * PanelRightOffset;
+        position.z += right.z * PanelRightOffset;
+        return {position, anchor->get_rotation()};
+    }
+
+    const UnityEngine::Vector3 position(FallbackPanelX, pause ? PauseFallbackY : ResultsFallbackY,
+                                        FallbackPanelZ);
+    return {position, facePlayer(position)};
 }
 
 void setText(TMPro::TextMeshProUGUI* target, const std::string& value) {
@@ -73,6 +96,50 @@ std::string difficulties(const RecommendedMap& recommendation) {
     return value.str();
 }
 
+std::string difficultyColor(Difficulty difficulty) {
+    switch (difficulty) {
+    case Difficulty::Easy:
+        return "#78D58A";
+    case Difficulty::Normal:
+        return "#69C9F0";
+    case Difficulty::Hard:
+        return "#F3C85B";
+    case Difficulty::Expert:
+        return "#F07A76";
+    case Difficulty::ExpertPlus:
+        return "#C68AF4";
+    }
+    return "#EEEEEE";
+}
+
+std::string rowDifficulties(const RecommendedMap& recommendation) {
+    std::ostringstream value;
+    for (std::size_t index = 0; index < recommendation.playableDifficulties.size(); ++index) {
+        if (index != 0)
+            value << "   ";
+        const auto difficulty = recommendation.playableDifficulties[index].difficulty;
+        value << "<color=" << difficultyColor(difficulty) << ">" << toString(difficulty) << "</color>";
+    }
+    return value.str();
+}
+
+bool isInstalled(const RecommendationItemState& item) {
+    return item.recommendation.installed || item.status == RecommendationItemStatus::Installed;
+}
+
+std::string rowMeta(const RecommendationItemState& item) {
+    std::ostringstream value;
+    value << "Mapped by " << item.recommendation.map.mapper << " · "
+          << static_cast<int>(std::round(item.recommendation.map.rating * 100.0)) << "%";
+    if (item.status == RecommendationItemStatus::Downloading)
+        value << " · <color=#69C9F0>Downloading…</color>";
+    else if (item.status == RecommendationItemStatus::Failed)
+        value << " · <color=#F07A76>Download failed</color>";
+    else if (isInstalled(item))
+        value << " · <color=#78D58A>Downloaded</color>";
+    return value.str();
+}
+
 void afterMenuReady(std::function<void()> action, int attemptsRemaining = 300) {
     BSML::MainThreadScheduler::ScheduleNextFrame([action = std::move(action), attemptsRemaining]() mutable {
         auto current = BSML::Helpers::GetMainFlowCoordinator()->YoungestChildFlowCoordinatorOrSelf();
@@ -99,9 +166,14 @@ void openInSolo(const std::string& hash) {
 BSML::FloatingScreen* createScreen(const char* name, bool pause,
                                    GlobalNamespace::PauseMenuManager* pauseManager,
                                    GlobalNamespace::ResultsViewController* resultsView) {
-    const UnityEngine::Vector3 position(PanelX, pause ? PausePanelY : ResultsPanelY, PanelZ);
-    auto* screen = BSML::FloatingScreen::CreateFloatingScreen(PanelSize, false, position,
-                                                              facePlayer(position), 0.0F, false);
+    UnityEngine::Transform* anchor = nullptr;
+    if (pauseManager != nullptr)
+        anchor = pauseManager->____pauseContainerTransform;
+    else if (resultsView != nullptr)
+        anchor = resultsView->get_transform();
+    const auto placement = placeBeside(anchor, pause);
+    auto* screen = BSML::FloatingScreen::CreateFloatingScreen(PanelSize, false, placement.position,
+                                                              placement.rotation, 0.0F, false);
     screen->get_transform()->set_localScale(UnityEngine::Vector3(PanelScale, PanelScale, PanelScale));
     screen->get_gameObject()->set_name(il2cpp_utils::newcsstr(name));
     if (auto* canvas = screen->GetComponent<UnityEngine::Canvas*>())
@@ -141,7 +213,7 @@ void UpNextPanelController::OnDestroy() {
 }
 
 void UpNextPanelController::render(const RecommendationSessionState& state) {
-    setText(headingText, state.stale ? "Up Next · Cached/offline" : "Up Next");
+    setText(headingText, state.stale ? "BeatNext · Cached/offline" : "BeatNext");
     if (state.loading)
         setText(statusText, "Finding and matching maps…");
     else if (state.error)
@@ -155,23 +227,37 @@ void UpNextPanelController::render(const RecommendationSessionState& state) {
         item0Button,  item1Button,  item2Button,  item3Button,  item4Button,  item5Button,  item6Button,
         item7Button,  item8Button,  item9Button,  item10Button, item11Button, item12Button, item13Button,
         item14Button, item15Button, item16Button, item17Button, item18Button, item19Button};
+    const std::array<TMPro::TextMeshProUGUI*, 20> metaTexts{
+        item0MetaText,  item1MetaText,  item2MetaText,  item3MetaText,  item4MetaText,
+        item5MetaText,  item6MetaText,  item7MetaText,  item8MetaText,  item9MetaText,
+        item10MetaText, item11MetaText, item12MetaText, item13MetaText, item14MetaText,
+        item15MetaText, item16MetaText, item17MetaText, item18MetaText, item19MetaText};
+    const std::array<TMPro::TextMeshProUGUI*, 20> difficultyTexts{
+        item0DifficultyText,  item1DifficultyText,  item2DifficultyText,  item3DifficultyText,
+        item4DifficultyText,  item5DifficultyText,  item6DifficultyText,  item7DifficultyText,
+        item8DifficultyText,  item9DifficultyText,  item10DifficultyText, item11DifficultyText,
+        item12DifficultyText, item13DifficultyText, item14DifficultyText, item15DifficultyText,
+        item16DifficultyText, item17DifficultyText, item18DifficultyText, item19DifficultyText};
     for (std::size_t index = 0; index < buttons.size(); ++index) {
         const bool visible = index < state.items.size();
-        if (buttons[index] == nullptr)
+        if (buttons[index] == nullptr || metaTexts[index] == nullptr || difficultyTexts[index] == nullptr)
             continue;
         buttons[index]->get_gameObject()->set_active(visible);
+        metaTexts[index]->get_gameObject()->set_active(visible);
+        difficultyTexts[index]->get_gameObject()->set_active(visible);
         if (!visible)
             continue;
         const auto& item = state.items[index];
-        std::string label =
-            "<b>" + item.recommendation.track.title + "</b>\n" + artists(item.recommendation.track);
-        if (item.status == RecommendationItemStatus::Downloading)
-            label += " · Downloading…";
-        else if (item.status == RecommendationItemStatus::Installed)
-            label += " · Installed";
-        else if (item.status == RecommendationItemStatus::Failed)
-            label += " · Retry";
-        setText(buttons[index]->GetComponentInChildren<TMPro::TextMeshProUGUI*>(), label);
+        const auto title = artists(item.recommendation.track) + " — " + item.recommendation.track.title;
+        auto* titleText = buttons[index]->GetComponentInChildren<TMPro::TextMeshProUGUI*>();
+        setText(titleText, title);
+        if (titleText != nullptr) {
+            titleText->set_enableWordWrapping(false);
+            titleText->set_overflowMode(TMPro::TextOverflowModes::Ellipsis);
+            titleText->set_richText(false);
+        }
+        setText(metaTexts[index], rowMeta(item));
+        setText(difficultyTexts[index], rowDifficulties(item.recommendation));
     }
 
     if (!state.selectedIndex || *state.selectedIndex >= state.items.size()) {
@@ -218,9 +304,8 @@ void UpNextPanelController::render(const RecommendationSessionState& state) {
         actionButton->set_interactable(!anotherDownload);
         const auto text = item.status == RecommendationItemStatus::Downloading ? "Downloading…"
                           : item.status == RecommendationItemStatus::Failed    ? "Retry download"
-                          : recommendation.installed || item.status == RecommendationItemStatus::Installed
-                              ? "Open in Solo"
-                              : "Download & Open";
+                          : isInstalled(item)                                  ? "Play"
+                                                                               : "Download";
         setText(actionButton->GetComponentInChildren<TMPro::TextMeshProUGUI*>(), text);
     }
 }
@@ -295,21 +380,28 @@ void UpNextPanelController::Action() {
     if (!state.selectedIndex || *state.selectedIndex >= state.items.size())
         return;
     const auto index = *state.selectedIndex;
-    SafePtrUnity<UpNextPanelController> panel(this);
-    CompositionRoot::instance().prepare(index, [panel](Outcome<std::string> prepared) mutable {
-        if (!panel || !prepared)
-            return;
-        const auto hash = std::move(prepared).value();
-        if (panel.ptr()->pauseContext) {
-            panel.ptr()->pendingHash = il2cpp_utils::newcsstr(hash);
-            if (panel.ptr()->confirmModal != nullptr)
-                panel.ptr()->confirmModal->Show(true, true, nullptr);
+    const auto& item = state.items[index];
+    if (item.status == RecommendationItemStatus::Downloading)
+        return;
+    if (isInstalled(item)) {
+        const auto& hash = item.recommendation.map.hash;
+        if (pauseContext) {
+            pendingHash = il2cpp_utils::newcsstr(hash);
+            if (confirmModal != nullptr)
+                confirmModal->Show(true, true, nullptr);
             return;
         }
-        if (panel.ptr()->resultsView != nullptr)
-            panel.ptr()->resultsView->ContinueButtonPressed();
+        if (resultsView != nullptr)
+            resultsView->ContinueButtonPressed();
         up_next_ui::hideResults();
         afterMenuReady([hash] { openInSolo(hash); });
+        return;
+    }
+
+    SafePtrUnity<UpNextPanelController> panel(this);
+    CompositionRoot::instance().prepare(index, [panel](Outcome<std::string> prepared) mutable {
+        if (panel && prepared)
+            logger.info("Downloaded Up Next map {}; waiting for the user to press Play", prepared.value());
     });
 }
 

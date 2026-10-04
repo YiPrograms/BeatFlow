@@ -5,6 +5,8 @@
 #include "GlobalNamespace/BeatmapLevel.hpp"
 #include "GlobalNamespace/BeatmapLevelPack.hpp"
 #include "GlobalNamespace/LevelCollectionNavigationController.hpp"
+#include "GlobalNamespace/LevelCollectionTableView.hpp"
+#include "GlobalNamespace/LevelCollectionViewController.hpp"
 #include "GlobalNamespace/LevelSelectionFlowCoordinator.hpp"
 #include "GlobalNamespace/LevelSelectionNavigationController.hpp"
 #include "GlobalNamespace/SelectLevelCategoryViewController.hpp"
@@ -15,6 +17,32 @@
 #include "bsml/shared/BSML/MainThreadScheduler.hpp"
 #include "bsml/shared/Helpers/getters.hpp"
 #include "songcore/shared/SongCore.hpp"
+
+#include <algorithm>
+#include <cctype>
+
+namespace {
+
+std::string normalizedHash(std::string value) {
+    constexpr std::string_view prefix = "custom_level_";
+    if (value.starts_with(prefix))
+        value.erase(0, prefix.size());
+    std::transform(value.begin(), value.end(), value.begin(),
+                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+    return value;
+}
+
+bool isSelected(GlobalNamespace::LevelSelectionNavigationController* navigation,
+                GlobalNamespace::LevelCollectionTableView* table, const std::string& hash) {
+    if (navigation == nullptr || table == nullptr || navigation->get_beatmapLevel() == nullptr ||
+        table->____selectedBeatmapLevel == nullptr)
+        return false;
+    const auto target = normalizedHash(hash);
+    return normalizedHash(static_cast<std::string>(navigation->get_beatmapLevel()->___levelID)) == target &&
+           normalizedHash(static_cast<std::string>(table->____selectedBeatmapLevel->___levelID)) == target;
+}
+
+} // namespace
 
 namespace beatnext::quest {
 
@@ -30,7 +58,7 @@ void SongSelectionNavigator::open(const std::string& hash, Callback callback) {
         return;
     }
 
-    auto category = GlobalNamespace::SelectLevelCategoryViewController::LevelCategory::All;
+    auto category = GlobalNamespace::SelectLevelCategoryViewController::LevelCategory::CustomSongs;
     System::Nullable_1<GlobalNamespace::SelectLevelCategoryViewController::LevelCategory> nullableCategory;
     nullableCategory.value = category;
     nullableCategory.hasValue = true;
@@ -54,8 +82,7 @@ void SongSelectionNavigator::open(const std::string& hash, Callback callback) {
         return;
     }
     button->Press();
-    CompositionRoot::instance().rememberPlayed(hash);
-    selectWhenReady(hash, 180, std::move(callback));
+    selectWhenReady(hash, 240, std::move(callback));
 }
 
 void SongSelectionNavigator::selectWhenReady(const std::string& hash, int attemptsRemaining,
@@ -64,20 +91,39 @@ void SongSelectionNavigator::selectWhenReady(const std::string& hash, int attemp
     auto* level = SongCore::API::Loading::GetLevelByHash(hash);
     auto navigation = solo == nullptr ? nullptr : solo->___levelSelectionNavigationController;
     auto collection = navigation == nullptr ? nullptr : navigation->____levelCollectionNavigationController;
+    auto collectionView = collection == nullptr ? nullptr : collection->____levelCollectionViewController;
+    auto table = collectionView == nullptr ? nullptr : collectionView->____levelCollectionTableView;
     if (solo != nullptr && solo->get_isActivated() && !solo->get_isInTransition() && level != nullptr &&
-        collection != nullptr) {
+        collection != nullptr && collectionView != nullptr && table != nullptr) {
+        collection->____beatmapLevelToBeSelectedAfterPresent = level;
+        collectionView->____beatmapLevelToBeSelected = level;
         collection->SelectLevel(level);
-        BSML::MainThreadScheduler::ScheduleNextFrame(
-            [navigation, level, callback = std::move(callback)]() mutable {
-                if (navigation != nullptr && navigation->get_beatmapLevel() == level) {
-                    if (callback)
-                        callback(Outcome<bool>::success(true));
-                } else if (callback) {
-                    callback(Outcome<bool>::failure(
-                        {ErrorCode::Internal, "Solo opened, but Beat Saber did not select the requested map.",
-                         true, std::nullopt}));
-                }
-            });
+        table->SelectLevel(level);
+        BSML::MainThreadScheduler::ScheduleNextFrame([this, hash, attemptsRemaining,
+                                                      callback = std::move(callback)]() mutable {
+            auto* currentSolo =
+                BSML::Helpers::GetDiContainer()->Resolve<GlobalNamespace::SoloFreePlayFlowCoordinator*>();
+            auto currentNavigation =
+                currentSolo == nullptr ? nullptr : currentSolo->___levelSelectionNavigationController;
+            auto currentCollection = currentNavigation == nullptr
+                                         ? nullptr
+                                         : currentNavigation->____levelCollectionNavigationController;
+            auto currentView =
+                currentCollection == nullptr ? nullptr : currentCollection->____levelCollectionViewController;
+            auto currentTable = currentView == nullptr ? nullptr : currentView->____levelCollectionTableView;
+            if (isSelected(currentNavigation, currentTable, hash)) {
+                CompositionRoot::instance().rememberPlayed(hash);
+                if (callback)
+                    callback(Outcome<bool>::success(true));
+            } else if (attemptsRemaining > 0) {
+                selectWhenReady(hash, attemptsRemaining - 1, std::move(callback));
+            } else if (callback) {
+                callback(Outcome<bool>::failure(
+                    {ErrorCode::Internal,
+                     "Solo opened, but the requested map was not selected in the visible song list.", true,
+                     std::nullopt}));
+            }
+        });
         return;
     }
     if (attemptsRemaining <= 0) {
