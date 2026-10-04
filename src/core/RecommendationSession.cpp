@@ -10,12 +10,35 @@ std::uint64_t RecommendationSession::begin(std::string context) {
     {
         std::scoped_lock lock(mutex_);
         const auto generation = state_.generation + 1;
-        state_ = {generation, {}, std::nullopt, std::move(context), std::nullopt, true, false};
+        state_ = {};
+        state_.generation = generation;
+        state_.context = std::move(context);
+        state_.loading = true;
         snapshot = state_;
         subscribers = subscribersLocked();
     }
     notify(snapshot, subscribers);
     return snapshot.generation;
+}
+
+bool RecommendationSession::updateProgress(std::uint64_t generation, const RecommendationProgress& progress) {
+    RecommendationSessionState snapshot;
+    std::vector<Callback> subscribers;
+    {
+        std::scoped_lock lock(mutex_);
+        if (generation != state_.generation || !state_.loading)
+            return false;
+        state_.progressStage = progress.stage;
+        if (progress.sourceTrack)
+            state_.sourceTrack = progress.sourceTrack;
+        state_.completedTracks = progress.completedTracks;
+        state_.totalTracks = progress.totalTracks;
+        state_.matchesFound = progress.matchesFound;
+        snapshot = state_;
+        subscribers = subscribersLocked();
+    }
+    notify(snapshot, subscribers);
+    return true;
 }
 
 bool RecommendationSession::finish(std::uint64_t generation, std::vector<RecommendedMap> recommendations,

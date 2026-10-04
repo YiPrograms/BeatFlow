@@ -41,3 +41,18 @@ BF_TEST("recommendation session publishes selection and download states") {
     BF_REQUIRE(updates == 6);
     session.unsubscribe(token);
 }
+
+BF_TEST("recommendation session publishes live matching progress") {
+    RecommendationSession session;
+    const auto generation = session.begin("After song");
+    Track source{"source", "Matched title", {"Matched artist"}, 210, "", "", 1.0};
+    BF_REQUIRE(
+        session.updateProgress(generation, {RecommendationProgressStage::MatchingMaps, source, 7, 20, 3}));
+    const auto state = session.state();
+    BF_REQUIRE(state.loading);
+    BF_REQUIRE(state.sourceTrack.has_value());
+    BF_REQUIRE(state.sourceTrack->providerId == "source");
+    BF_REQUIRE(state.completedTracks == 7);
+    BF_REQUIRE(state.totalTracks == 20);
+    BF_REQUIRE(state.matchesFound == 3);
+}

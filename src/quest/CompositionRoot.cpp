@@ -119,7 +119,14 @@ void CompositionRoot::beginLevel(GlobalNamespace::BeatmapLevel* level) {
     }
 
     const bool queued = workers_.submit(bindIl2Cpp([this, cancellation, generation, song] {
-        auto result = engine_.recommendAfter(song, request(), cancellation->token());
+        auto result =
+            engine_.recommendAfter(song, request(), cancellation->token(),
+                                   [this, cancellation, generation](const RecommendationProgress& progress) {
+                                       dispatch([this, cancellation, generation, progress] {
+                                           if (!cancellation->isCancellationRequested())
+                                               session_.updateProgress(generation, progress);
+                                       });
+                                   });
         dispatch([this, cancellation, generation, result = std::move(result)]() mutable {
             if (cancellation->isCancellationRequested())
                 return;

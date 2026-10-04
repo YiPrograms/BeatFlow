@@ -11,6 +11,7 @@ Quest lifecycle and UI → recommendation session → portable recommendation en
 ## Portable core
 
 `RecommendationEngine` accepts a plain `CurrentSong`, resolves it through anonymous YouTube Music search, fetches the track radio, and matches each track against BeatSaver. Identity is established from title, artist, recording markers, and duration before map quality affects ranking. The core returns at most 20 unique map hashes and excludes the current and already-played maps.
+It publishes typed progress events for resolution, radio loading, and bounded map matching. `RecommendationSession` rejects stale generations and forwards those events to subscribed panels without polling.
 
 `RecommendationSession` is the single observable UI state. Each level starts a new generation. Completion, selection, and download updates must carry that generation, so callbacks from an older level are rejected. Subscribers receive immutable snapshots outside the session lock.
 
@@ -25,6 +26,8 @@ Quest lifecycle and UI → recommendation session → portable recommendation en
 `CompositionRoot` constructs the provider, catalog, library, engine, worker queue, and session. It contains no browsing mode, account state, filters, or UI-specific recommendation list.
 
 At solo level start, the lifecycle adapter starts one cancellable recommendation generation. Results and Pause create independent floating-screen hosts for the same `UpNextPanelController`; closing either screen destroys its host and subscription. Network and matching run on the bounded worker queue. Unity updates, SongCore UI transitions, and image work run on the main thread.
+
+The Quest-only preview adapter uses Beat Saber's preview player for installed maps and BeatSaver preview audio for remote maps.
 
 `SongSelectionNavigator` owns the post-download transition. It waits until SongCore resolves the hash, closes the source screen through Beat Saber's normal controls, configures Solo, waits for active level-selection controllers, explicitly selects the level, and verifies the selected object.
 

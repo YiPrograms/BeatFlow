@@ -25,6 +25,11 @@ struct RecommendationSessionState {
     std::optional<ServiceError> error;
     std::string context;
     std::optional<std::size_t> selectedIndex;
+    std::optional<Track> sourceTrack;
+    RecommendationProgressStage progressStage{RecommendationProgressStage::ResolvingCurrentSong};
+    std::size_t completedTracks{0};
+    std::size_t totalTracks{0};
+    std::size_t matchesFound{0};
     bool loading{false};
     bool stale{false};
 };
@@ -36,6 +41,7 @@ class RecommendationSession {
     [[nodiscard]] std::uint64_t begin(std::string context);
     bool finish(std::uint64_t generation, std::vector<RecommendedMap> recommendations,
                 std::optional<ServiceError> error = {});
+    bool updateProgress(std::uint64_t generation, const RecommendationProgress& progress);
     bool select(std::size_t index);
     bool updateItem(std::uint64_t generation, std::size_t index, RecommendationItemStatus status,
                     std::string message = {}, bool installed = false);

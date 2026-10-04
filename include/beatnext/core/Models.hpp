@@ -24,6 +24,16 @@ struct Track {
     bool stale{false};
 };
 
+enum class RecommendationProgressStage { ResolvingCurrentSong, LoadingRadio, MatchingMaps };
+
+struct RecommendationProgress {
+    RecommendationProgressStage stage{RecommendationProgressStage::ResolvingCurrentSong};
+    std::optional<Track> sourceTrack;
+    std::size_t completedTracks{0};
+    std::size_t totalTracks{0};
+    std::size_t matchesFound{0};
+};
+
 struct CurrentSong {
     std::string title;
     std::string artist;

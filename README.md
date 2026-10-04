@@ -8,12 +8,13 @@ BeatNext turns the song you are playing into a queue of Beat Saber maps. Pause a
 
 1. Start any solo built-in or custom song with usable title and artist metadata.
 2. Open Pause to browse Up Next while the run is still active, or finish the song to see the same panel beside the score screen.
-3. Select any result in the scrollable list. BeatNext preserves the complete Unicode title and shows the matching BeatSaver map in the details column.
-4. Choose **Download & Open** or **Open in Solo**.
+3. Select any result in the scrollable list to hear its preview. BeatNext preserves the complete Unicode title and your scroll position while showing the matching BeatSaver map in the details column.
+4. Choose **Download**, then **Play** when the map is ready. Already downloaded maps show **Play** immediately.
 5. From Pause, confirm before leaving the current run. From Results, BeatNext closes the score screen normally.
 6. BeatNext refreshes SongCore, opens Solo, and selects the requested map so you can choose a difficulty and press Play.
 
 The normal Pause and Results controls remain usable. Up Next never appears in multiplayer, after a failed run, or when its screen is disabled in settings.
+While recommendations are being prepared, the panel shows the matched YouTube Music track and live matching progress. Use the arrow beside that track to open it in YouTube Music.
 
 ## Compatibility
 

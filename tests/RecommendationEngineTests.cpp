@@ -168,14 +168,22 @@ BF_TEST("Up Next resolves the current song then matches its radio recommendation
     RecommendationEngine engine(music, maps, nullptr);
     CancellationSource cancellation;
 
-    const auto result =
-        engine.recommendAfter({"Current Song", "Current Artist", 200}, {}, cancellation.token());
+    std::vector<RecommendationProgress> progress;
+    const auto result = engine.recommendAfter(
+        {"Current Song", "Current Artist", 200}, {}, cancellation.token(),
+        [&progress](const RecommendationProgress& update) { progress.push_back(update); });
 
     BF_REQUIRE(result.ok());
     BF_REQUIRE(result.value().size() == 1);
     BF_REQUIRE(result.value().front().track.providerId == "next");
     BF_REQUIRE(music.lastSearchQuery == "Current Artist Current Song");
     BF_REQUIRE(music.lastRadioTrackId == "current");
+    BF_REQUIRE(progress.front().stage == RecommendationProgressStage::ResolvingCurrentSong);
+    BF_REQUIRE(progress[1].stage == RecommendationProgressStage::LoadingRadio);
+    BF_REQUIRE(progress[1].sourceTrack->providerId == "current");
+    BF_REQUIRE(progress.back().stage == RecommendationProgressStage::MatchingMaps);
+    BF_REQUIRE(progress.back().completedTracks == 2);
+    BF_REQUIRE(progress.back().matchesFound == 1);
 }
 
 BF_TEST("Up Next returns at most twenty unique map hashes") {

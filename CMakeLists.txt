@@ -88,6 +88,7 @@ if(BEATNEXT_BUILD_QUEST OR ANDROID)
         src/quest/QuestHttpClient.cpp
         src/quest/QuestMapInstaller.cpp
         src/quest/RecommendationPresentation.cpp
+        src/quest/RecommendationPreviewPlayer.cpp
         src/quest/SettingsViewController.cpp
         src/quest/SongSelectionNavigator.cpp
         src/quest/SongDetailsCatalog.cpp

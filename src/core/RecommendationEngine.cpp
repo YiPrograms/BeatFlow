@@ -61,31 +61,42 @@ RecommendationEngine::RecommendationEngine(MusicProvider& musicProvider, MapCata
     : musicProvider_(musicProvider), mapCatalog_(mapCatalog), mapInstaller_(mapInstaller),
       matcher_(std::move(matcher)) {}
 
-Outcome<std::vector<RecommendedMap>> RecommendationEngine::following(const std::string& trackId,
+Outcome<std::vector<RecommendedMap>> RecommendationEngine::following(const Track& sourceTrack,
                                                                      const RecommendationRequest& request,
                                                                      const CancellationToken& cancellation,
-                                                                     ProgressCallback onMatch) {
-    auto tracks = musicProvider_.radio(trackId, cancellation);
+                                                                     ProgressCallback onProgress) {
+    if (onProgress) {
+        Progress progress;
+        progress.stage = ProgressStage::LoadingRadio;
+        progress.sourceTrack = sourceTrack;
+        onProgress(progress);
+    }
+    auto tracks = musicProvider_.radio(sourceTrack.providerId, cancellation);
     if (!tracks) {
         return Outcome<std::vector<RecommendedMap>>::failure(tracks.error());
     }
     auto updatedRequest = request;
-    updatedRequest.currentTrackId = trackId;
-    return recommend(std::move(tracks).value(), updatedRequest, cancellation, onMatch);
+    updatedRequest.currentTrackId = sourceTrack.providerId;
+    return recommend(std::move(tracks).value(), updatedRequest, cancellation, onProgress, sourceTrack);
 }
 
 Outcome<std::vector<RecommendedMap>>
 RecommendationEngine::recommendAfter(const CurrentSong& currentSong, const RecommendationRequest& request,
-                                     const CancellationToken& cancellation, ProgressCallback onMatch) {
+                                     const CancellationToken& cancellation, ProgressCallback onProgress) {
     if (cancellation.isCancellationRequested()) {
         return Outcome<std::vector<RecommendedMap>>::failure(cancelledError());
+    }
+    if (onProgress) {
+        Progress progress;
+        progress.stage = ProgressStage::ResolvingCurrentSong;
+        onProgress(progress);
     }
     auto currentTrack =
         resolveTrack(currentSong.title, currentSong.artist, currentSong.durationSeconds, cancellation);
     if (!currentTrack) {
         return Outcome<std::vector<RecommendedMap>>::failure(currentTrack.error());
     }
-    return following(currentTrack.value().providerId, request, cancellation, std::move(onMatch));
+    return following(currentTrack.value(), request, cancellation, std::move(onProgress));
 }
 
 Outcome<Track> RecommendationEngine::resolveTrack(const std::string& title, const std::string& artist,
@@ -165,12 +176,20 @@ Outcome<Track> RecommendationEngine::resolveTrack(const std::string& title, cons
 Outcome<std::vector<RecommendedMap>> RecommendationEngine::recommend(std::vector<Track> tracks,
                                                                      const RecommendationRequest& request,
                                                                      const CancellationToken& cancellation,
-                                                                     const ProgressCallback& onMatch) {
+                                                                     const ProgressCallback& onProgress,
+                                                                     const Track& sourceTrack) {
     std::vector<RecommendedMap> recommendations;
     std::unordered_set<std::string> seenTracks;
     std::unordered_set<std::string> seenHashes;
 
     const auto trackLimit = std::min(request.maximumTracks, tracks.size());
+    const auto publishProgress = [&](std::size_t completed) {
+        if (onProgress) {
+            onProgress(
+                {ProgressStage::MatchingMaps, sourceTrack, completed, trackLimit, recommendations.size()});
+        }
+    };
+    publishProgress(0);
     for (std::size_t index = 0; index < trackLimit; ++index) {
         if (cancellation.isCancellationRequested()) {
             return Outcome<std::vector<RecommendedMap>>::failure(cancelledError());
@@ -180,6 +199,7 @@ Outcome<std::vector<RecommendedMap>> RecommendationEngine::recommend(std::vector
         if (track.providerId.empty() ||
             (request.currentTrackId && track.providerId == *request.currentTrackId) ||
             !seenTracks.insert(track.providerId).second) {
+            publishProgress(index + 1);
             continue;
         }
         if (track.providerRelevance <= 0.0 || track.providerRelevance > 1.0) {
@@ -193,6 +213,7 @@ Outcome<std::vector<RecommendedMap>> RecommendationEngine::recommend(std::vector
             if (maps.error().code == ErrorCode::Cancelled) {
                 return Outcome<std::vector<RecommendedMap>>::failure(maps.error());
             }
+            publishProgress(index + 1);
             continue;
         }
 
@@ -216,10 +237,8 @@ Outcome<std::vector<RecommendedMap>> RecommendationEngine::recommend(std::vector
         if (best) {
             seenHashes.insert(lowercaseAscii(best->map.hash));
             recommendations.push_back(std::move(*best));
-            if (onMatch) {
-                onMatch(recommendations.back());
-            }
         }
+        publishProgress(index + 1);
 
         if (recommendations.size() >= request.maximumResults) {
             break;

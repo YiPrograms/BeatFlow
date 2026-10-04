@@ -11,7 +11,9 @@ namespace beatnext {
 
 class RecommendationEngine {
   public:
-    using ProgressCallback = std::function<void(const RecommendedMap&)>;
+    using ProgressStage = RecommendationProgressStage;
+    using Progress = RecommendationProgress;
+    using ProgressCallback = std::function<void(const Progress&)>;
 
     RecommendationEngine(MusicProvider& musicProvider, MapCatalog& mapCatalog, MapInstaller* mapInstaller,
                          Matcher matcher = Matcher{});
@@ -19,19 +21,20 @@ class RecommendationEngine {
     Outcome<std::vector<RecommendedMap>> recommendAfter(const CurrentSong& currentSong,
                                                         const RecommendationRequest& request,
                                                         const CancellationToken& cancellation,
-                                                        ProgressCallback onMatch = {});
+                                                        ProgressCallback onProgress = {});
     Outcome<Track> resolveTrack(const std::string& title, const std::string& artist,
                                 std::optional<int> durationSeconds, const CancellationToken& cancellation);
 
   private:
-    Outcome<std::vector<RecommendedMap>> following(const std::string& trackId,
+    Outcome<std::vector<RecommendedMap>> following(const Track& sourceTrack,
                                                    const RecommendationRequest& request,
                                                    const CancellationToken& cancellation,
-                                                   ProgressCallback onMatch);
+                                                   ProgressCallback onProgress);
     Outcome<std::vector<RecommendedMap>> recommend(std::vector<Track> tracks,
                                                    const RecommendationRequest& request,
                                                    const CancellationToken& cancellation,
-                                                   const ProgressCallback& onMatch);
+                                                   const ProgressCallback& onProgress,
+                                                   const Track& sourceTrack);
 
     MusicProvider& musicProvider_;
     MapCatalog& mapCatalog_;

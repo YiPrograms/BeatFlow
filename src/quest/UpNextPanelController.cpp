@@ -3,11 +3,13 @@
 #include "beatnext/quest/Assets.hpp"
 #include "beatnext/quest/Logger.hpp"
 #include "beatnext/quest/RecommendationPresentation.hpp"
+#include "beatnext/quest/RecommendationPreviewPlayer.hpp"
 #include "beatnext/quest/SongSelectionNavigator.hpp"
 #include "beatnext/quest/UpNextListCell.hpp"
 
 #include "GlobalNamespace/MainFlowCoordinator.hpp"
 #include "GlobalNamespace/SoloFreePlayFlowCoordinator.hpp"
+#include "HMUI/ScrollView.hpp"
 #include "HMUI/Touchable.hpp"
 #include "TMPro/TextOverflowModes.hpp"
 #include "UnityEngine/Canvas.hpp"
@@ -25,6 +27,7 @@
 #include "bsml/shared/Helpers/utilities.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <limits>
 #include <sstream>
@@ -39,17 +42,17 @@ SafePtrUnity<BSML::FloatingScreen> pauseScreen;
 SongSelectionNavigator navigator;
 
 constexpr std::string_view CellReuseIdentifier = "BeatNextRecommendationCell";
-constexpr UnityEngine::Vector2 PanelSize{128.0F, 118.0F};
+constexpr UnityEngine::Vector2 PanelSize{148.0F, 146.0F};
 constexpr float PanelScale = 0.022F;
 constexpr float FallbackPanelZ = 2.8F;
 constexpr float ResultsFallbackY = 1.85F;
-constexpr float PauseFallbackY = 1.65F;
+constexpr float PauseFallbackY = 1.80F;
 constexpr float ResultsYOffset = 0.35F;
-constexpr float PauseYOffset = 0.80F;
+constexpr float PauseYOffset = 0.95F;
 constexpr float RadiansToDegrees = 57.2957795F;
 constexpr float DegreesToRadians = 0.0174532925F;
 constexpr float ResultsAngleOffset = 52.0F;
-constexpr float PauseAngleOffset = 52.0F;
+constexpr float PauseAngleOffset = 58.0F;
 
 struct PanelPlacement {
     UnityEngine::Vector3 position;
@@ -102,6 +105,37 @@ void setText(TMPro::TextMeshProUGUI* target, const std::string& value) {
 
 bool isInstalled(const RecommendationItemState& item) {
     return item.recommendation.installed || item.status == RecommendationItemStatus::Installed;
+}
+
+std::string listFingerprint(const RecommendationSessionState& state) {
+    std::ostringstream value;
+    value << state.generation;
+    for (const auto& item : state.items) {
+        value << '|' << item.recommendation.map.hash << ':' << static_cast<int>(item.status) << ':'
+              << item.recommendation.installed << ':' << item.message;
+    }
+    return value.str();
+}
+
+std::string progressText(const RecommendationSessionState& state) {
+    switch (state.progressStage) {
+    case RecommendationProgressStage::ResolvingCurrentSong:
+        return "Identifying this song on YouTube Music…";
+    case RecommendationProgressStage::LoadingRadio:
+        return state.sourceTrack ? "Loading radio for\n" + state.sourceTrack->title + "…"
+                                 : "Loading YouTube Music radio…";
+    case RecommendationProgressStage::MatchingMaps:
+        return "Matched " + std::to_string(state.matchesFound) + " maps\nChecked " +
+               std::to_string(state.completedTracks) + " of " + std::to_string(state.totalTracks) +
+               " recommended songs";
+    }
+    return "Finding recommendations…";
+}
+
+bool safeYouTubeId(const std::string& providerId) {
+    return !providerId.empty() && std::ranges::all_of(providerId, [](unsigned char character) {
+        return std::isalnum(character) != 0 || character == '-' || character == '_';
+    });
 }
 
 void afterMainMenuReady(std::function<void()> action, int attemptsRemaining = 300) {
@@ -206,6 +240,7 @@ void UpNextPanelController::ctor() {
     pauseContext = false;
     subscription = 0;
     loadedArtworkUrl = nullptr;
+    renderedListFingerprint = nullptr;
 }
 
 void UpNextPanelController::bind(bool isPause, GlobalNamespace::PauseMenuManager* pause,
@@ -224,6 +259,7 @@ void UpNextPanelController::bind(bool isPause, GlobalNamespace::PauseMenuManager
 }
 
 void UpNextPanelController::OnDestroy() {
+    recommendation_preview::stop();
     if (subscription != 0) {
         CompositionRoot::instance().unsubscribe(subscription);
         subscription = 0;
@@ -250,13 +286,29 @@ HMUI::TableCell* UpNextPanelController::CellForIdx(HMUI::TableView* tableView, i
 void UpNextPanelController::SelectSong(UnityW<HMUI::TableView> table, int index) {
     if (table == nullptr || index < 0)
         return;
+    const auto state = CompositionRoot::instance().state();
+    if (static_cast<std::size_t>(index) >= state.items.size())
+        return;
     CompositionRoot::instance().select(static_cast<std::size_t>(index));
+    const auto& recommendation = state.items[static_cast<std::size_t>(index)].recommendation;
+    recommendation_preview::play(recommendation);
 }
 
 void UpNextPanelController::render(const RecommendationSessionState& state) {
     setText(headingText, state.stale ? "BeatNext · Cached/offline" : "BeatNext");
+    if (state.sourceTrack) {
+        setText(currentTrackText, "Matched on YouTube Music: " + state.sourceTrack->title + " · " +
+                                      presentation::artists(*state.sourceTrack));
+    } else {
+        setText(currentTrackText, "Matching this song on YouTube Music…");
+    }
+    if (youtubeButton != nullptr) {
+        youtubeButton->get_gameObject()->set_active(state.sourceTrack &&
+                                                    safeYouTubeId(state.sourceTrack->providerId));
+    }
+
     if (state.loading)
-        setText(statusText, "Finding and matching maps…");
+        setText(statusText, "");
     else if (state.error)
         setText(statusText, state.error->message);
     else if (state.items.empty())
@@ -264,10 +316,31 @@ void UpNextPanelController::render(const RecommendationSessionState& state) {
     else
         setText(statusText, std::to_string(state.items.size()) + " recommendations");
 
-    if (songList != nullptr && songList->tableView != nullptr) {
+    const bool showContent = !state.loading && !state.items.empty();
+    if (contentContainer != nullptr)
+        contentContainer->set_active(showContent);
+    if (loadingContainer != nullptr)
+        loadingContainer->set_active(!showContent);
+    if (loadingSpinner != nullptr)
+        loadingSpinner->set_active(state.loading);
+    if (state.loading)
+        setText(loadingProgressText, progressText(state));
+    else if (state.error)
+        setText(loadingProgressText, state.error->message);
+    else if (state.items.empty())
+        setText(loadingProgressText, "No confident BeatSaver matches were found.");
+
+    const auto fingerprint = listFingerprint(state);
+    const std::string previousFingerprint =
+        renderedListFingerprint ? static_cast<std::string>(renderedListFingerprint) : "";
+    if (songList != nullptr && songList->tableView != nullptr && fingerprint != previousFingerprint) {
+        renderedListFingerprint = il2cpp_utils::newcsstr(fingerprint);
+        const auto previousPosition = songList->tableView->_scrollView->get_position();
         songList->tableView->ReloadData();
-        if (state.selectedIndex && *state.selectedIndex < state.items.size())
+        songList->tableView->_scrollView->ScrollTo(previousPosition, false);
+        if (state.selectedIndex && *state.selectedIndex < state.items.size()) {
             songList->tableView->SelectCellWithIdx(static_cast<int>(*state.selectedIndex), false);
+        }
     }
 
     if (!state.selectedIndex || *state.selectedIndex >= state.items.size()) {
@@ -316,6 +389,14 @@ void UpNextPanelController::render(const RecommendationSessionState& state) {
                                                                                : "Download";
         setText(actionButton->GetComponentInChildren<TMPro::TextMeshProUGUI*>(), text);
     }
+}
+
+void UpNextPanelController::OpenYouTubeMusic() {
+    const auto state = CompositionRoot::instance().state();
+    if (!state.sourceTrack || !safeYouTubeId(state.sourceTrack->providerId))
+        return;
+    static auto openUrl = il2cpp_utils::resolve_icall<void, StringW>("UnityEngine.Application::OpenURL");
+    openUrl(il2cpp_utils::newcsstr("https://music.youtube.com/watch?v=" + state.sourceTrack->providerId));
 }
 
 void UpNextPanelController::Action() {
