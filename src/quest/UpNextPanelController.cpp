@@ -2,6 +2,7 @@
 
 #include "beatnext/quest/Assets.hpp"
 #include "beatnext/quest/Logger.hpp"
+#include "beatnext/quest/RecommendationPresentation.hpp"
 #include "beatnext/quest/SongSelectionNavigator.hpp"
 #include "beatnext/quest/UpNextListCell.hpp"
 
@@ -38,7 +39,7 @@ SafePtrUnity<BSML::FloatingScreen> pauseScreen;
 SongSelectionNavigator navigator;
 
 constexpr std::string_view CellReuseIdentifier = "BeatNextRecommendationCell";
-constexpr UnityEngine::Vector2 PanelSize{128.0F, 104.0F};
+constexpr UnityEngine::Vector2 PanelSize{128.0F, 118.0F};
 constexpr float PanelScale = 0.022F;
 constexpr float FallbackPanelZ = 2.8F;
 constexpr float ResultsFallbackY = 1.85F;
@@ -97,28 +98,6 @@ void followHost(BSML::FloatingScreen* screen, UnityEngine::Transform* anchor, bo
 void setText(TMPro::TextMeshProUGUI* target, const std::string& value) {
     if (target != nullptr)
         target->set_text(il2cpp_utils::newcsstr(value));
-}
-
-std::string artists(const Track& track) {
-    if (track.artists.empty())
-        return "Unknown artist";
-    std::ostringstream value;
-    for (std::size_t index = 0; index < track.artists.size(); ++index) {
-        if (index != 0)
-            value << " · ";
-        value << track.artists[index];
-    }
-    return value.str();
-}
-
-std::string difficulties(const RecommendedMap& recommendation) {
-    std::ostringstream value;
-    for (std::size_t index = 0; index < recommendation.playableDifficulties.size(); ++index) {
-        if (index != 0)
-            value << " · ";
-        value << toString(recommendation.playableDifficulties[index].difficulty);
-    }
-    return value.str();
 }
 
 bool isInstalled(const RecommendationItemState& item) {
@@ -307,13 +286,11 @@ void UpNextPanelController::render(const RecommendationSessionState& state) {
     const auto& item = state.items[*state.selectedIndex];
     const auto& recommendation = item.recommendation;
     setText(detailTitleText, recommendation.track.title);
-    setText(detailArtistText, artists(recommendation.track));
-    setText(detailMetaText,
-            "Mapped by " + recommendation.map.mapper + " · " +
-                std::to_string(static_cast<int>(std::round(recommendation.map.rating * 100.0))) + "%");
+    setText(detailArtistText, presentation::artists(recommendation.track));
+    setText(detailMetaText, presentation::mapMetadata(recommendation));
     const auto difficultyText = item.status == RecommendationItemStatus::Failed
                                     ? item.message + " Select Retry download to try again."
-                                    : difficulties(recommendation);
+                                    : presentation::difficulties(recommendation);
     setText(detailDifficultyText, difficultyText);
     if (detailImage != nullptr) {
         const auto& image = recommendation.track.artworkUrl.empty() ? recommendation.map.coverUrl

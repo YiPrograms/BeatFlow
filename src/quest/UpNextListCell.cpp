@@ -1,11 +1,10 @@
 #include "beatnext/quest/UpNextListCell.hpp"
 
+#include "beatnext/quest/RecommendationPresentation.hpp"
+
 #include "UnityEngine/Color.hpp"
 #include "UnityEngine/GameObject.hpp"
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
-
-#include <cmath>
-#include <sstream>
 
 DEFINE_TYPE(beatnext::quest, UpNextListCell);
 
@@ -15,18 +14,6 @@ namespace {
 void setText(TMPro::TextMeshProUGUI* target, const std::string& value) {
     if (target != nullptr)
         target->set_text(il2cpp_utils::newcsstr(value));
-}
-
-std::string artists(const Track& track) {
-    if (track.artists.empty())
-        return "Unknown artist";
-    std::ostringstream value;
-    for (std::size_t index = 0; index < track.artists.size(); ++index) {
-        if (index != 0)
-            value << " · ";
-        value << track.artists[index];
-    }
-    return value.str();
 }
 
 std::string difficultyLabel(Difficulty difficulty) {
@@ -58,12 +45,8 @@ void UpNextListCell::ctor() {
 UpNextListCell* UpNextListCell::populate(const RecommendationItemState& item) {
     const auto& recommendation = item.recommendation;
     setText(titleText, recommendation.track.title);
-    setText(artistText, artists(recommendation.track));
-
-    std::ostringstream mapper;
-    mapper << "Mapped by " << recommendation.map.mapper << " · "
-           << static_cast<int>(std::round(recommendation.map.rating * 100.0)) << "%";
-    setText(mapperText, mapper.str());
+    setText(artistText, presentation::artists(recommendation.track));
+    setText(mapperText, presentation::mapMetadata(recommendation));
 
     if (item.status == RecommendationItemStatus::Downloading)
         setText(statusText, "<color=#69C9F0>Downloading…</color>");
