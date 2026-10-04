@@ -17,6 +17,13 @@ void setText(TMPro::TextMeshProUGUI* target, const std::string& value) {
         target->set_text(il2cpp_utils::newcsstr(value));
 }
 
+void inheritTypography(TMPro::TextMeshProUGUI* target, TMPro::TextMeshProUGUI* source) {
+    if (target == nullptr || source == nullptr)
+        return;
+    target->set_font(source->get_font());
+    target->set_fontSharedMaterial(source->get_fontSharedMaterial());
+}
+
 std::string artists(const Track& track) {
     if (track.artists.empty())
         return "Unknown artist";
@@ -55,6 +62,15 @@ void UpNextListCell::ctor() {
     INVOKE_BASE_CTOR(classof(HMUI::TableCell*));
 }
 
+void UpNextListCell::inheritTypography(TMPro::TextMeshProUGUI* source) {
+    ::beatnext::quest::inheritTypography(titleText, source);
+    ::beatnext::quest::inheritTypography(statusText, source);
+    ::beatnext::quest::inheritTypography(artistText, source);
+    ::beatnext::quest::inheritTypography(mapperText, source);
+    for (auto* text : difficultyTexts)
+        ::beatnext::quest::inheritTypography(text, source);
+}
+
 UpNextListCell* UpNextListCell::populate(const RecommendationItemState& item) {
     const auto& recommendation = item.recommendation;
     setText(titleText, recommendation.track.title);
@@ -88,9 +104,12 @@ UpNextListCell* UpNextListCell::populate(const RecommendationItemState& item) {
 }
 
 void UpNextListCell::refreshBackground() {
-    if (background != nullptr)
-        background->set_color(
-            UnityEngine::Color(0.0F, 0.0F, 0.0F, (get_selected() || get_highlighted()) ? 0.82F : 0.45F));
+    if (background == nullptr)
+        return;
+    if (get_selected() || get_highlighted())
+        background->set_color(UnityEngine::Color(0.04F, 0.34F, 0.50F, 0.72F));
+    else
+        background->set_color(UnityEngine::Color(0.02F, 0.08F, 0.13F, 0.30F));
 }
 
 void UpNextListCell::SelectionDidChange(HMUI::SelectableCell::TransitionType) {

@@ -24,6 +24,7 @@ DECLARE_CLASS_CODEGEN(beatnext::quest, UpNextListCell, HMUI::TableCell) {
     DECLARE_INSTANCE_FIELD(UnityW<HMUI::ImageView>, background);
 
   public:
+    void inheritTypography(TMPro::TextMeshProUGUI * source);
     UpNextListCell* populate(const RecommendationItemState& item);
     void refreshBackground();
 };

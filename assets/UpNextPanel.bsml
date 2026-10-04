@@ -1,8 +1,8 @@
-<vertical preferred-width='142' preferred-height='96' bg='round-rect-panel' pad='2' spacing='1'
+<vertical preferred-width='142' preferred-height='96' bg='round-rect-panel' bg-color='#06111CD9' pad='2' spacing='1'
           child-expand-height='false' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
           xsi:noNamespaceSchemaLocation='https://raw.githubusercontent.com/RedBrumbler/Quest-BSML-Docs/gh-pages/schema.xsd'>
-  <text id='headingText' text='BeatNext' font-size='6' align='Center' preferred-height='7'/>
-  <text id='statusText' text='Finding recommendations…' font-size='3.7' align='Center'
+  <text id='headingText' text='BeatNext' font-size='6.5' color='#FFFFFF' align='Center' preferred-height='7'/>
+  <text id='statusText' text='Finding recommendations…' font-size='4' color='#E5E5E5' align='Center'
         preferred-height='5.5' word-wrapping='true'/>
   <horizontal preferred-height='78' child-expand-height='false' spacing='2'>
     <vertical preferred-width='90' preferred-height='78'>
@@ -10,16 +10,16 @@
     </vertical>
     <vertical preferred-width='46' preferred-height='78' bg='round-rect-panel' pad='2' spacing='1'
               child-expand-height='false'>
-      <text id='detailTitleText' text='Select a recommendation' font-size='4.3' align='Center'
+      <text id='detailTitleText' text='Select a recommendation' font-size='4.8' color='#FFFFFF' align='Center'
             preferred-height='12' word-wrapping='true' overflow-mode='Ellipsis' rich-text='false'/>
-      <text id='detailArtistText' text='' font-size='3.4' color='#DDDDDD' align='Center'
+      <text id='detailArtistText' text='' font-size='3.7' color='#E5E5E5' align='Center'
             preferred-height='7' word-wrapping='true' overflow-mode='Ellipsis' rich-text='false'/>
       <image id='detailImage' preferred-width='27' preferred-height='27' preserve-aspect='true'/>
-      <text id='detailMetaText' text='' font-size='3.1' align='Center' preferred-height='6'
+      <text id='detailMetaText' text='' font-size='3.4' color='#FFFFFF' align='Center' preferred-height='6'
             word-wrapping='true' overflow-mode='Ellipsis'/>
-      <text id='detailDifficultyText' text='' font-size='3.1' align='Center' preferred-height='7'
+      <text id='detailDifficultyText' text='' font-size='3.4' color='#FFFFFF' align='Center' preferred-height='7'
             word-wrapping='true' overflow-mode='Ellipsis'/>
-      <primary-button id='actionButton' on-click='Action' text='Play' preferred-height='8' font-size='4'/>
+      <primary-button id='actionButton' on-click='Action' text='Play' preferred-height='9' font-size='4.5'/>
     </vertical>
   </horizontal>
   <modal id='confirmModal' size-delta-x='80' size-delta-y='38'>

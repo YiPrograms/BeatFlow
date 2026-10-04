@@ -39,14 +39,16 @@ SongSelectionNavigator navigator;
 
 constexpr std::string_view CellReuseIdentifier = "BeatNextRecommendationCell";
 constexpr UnityEngine::Vector2 PanelSize{142.0F, 96.0F};
-constexpr float PanelScale = 0.021F;
-constexpr float PanelRightOffset = 3.15F;
+constexpr float PanelScale = 0.022F;
 constexpr float FallbackPanelZ = 2.8F;
 constexpr float ResultsFallbackY = 1.85F;
 constexpr float PauseFallbackY = 1.65F;
 constexpr float ResultsYOffset = 0.22F;
 constexpr float PauseYOffset = 0.12F;
 constexpr float RadiansToDegrees = 57.2957795F;
+constexpr float DegreesToRadians = 0.0174532925F;
+constexpr float ResultsAngleOffset = 32.0F;
+constexpr float PauseAngleOffset = 27.0F;
 
 struct PanelPlacement {
     UnityEngine::Vector3 position;
@@ -59,12 +61,19 @@ UnityEngine::Quaternion facePlayer(const UnityEngine::Vector3& position) {
 }
 
 PanelPlacement placeBeside(UnityEngine::Transform* anchor, bool pause) {
-    UnityEngine::Vector3 position(PanelRightOffset, pause ? PauseFallbackY : ResultsFallbackY,
-                                  FallbackPanelZ);
+    const float angle = (pause ? PauseAngleOffset : ResultsAngleOffset) * DegreesToRadians;
+    UnityEngine::Vector3 position(std::sin(angle) * FallbackPanelZ, pause ? PauseFallbackY : ResultsFallbackY,
+                                  std::cos(angle) * FallbackPanelZ);
     if (anchor != nullptr) {
-        position = anchor->get_position();
-        position.x += PanelRightOffset;
-        position.y += pause ? PauseYOffset : ResultsYOffset;
+        const auto anchorPosition = anchor->get_position();
+        const float radius = std::hypot(anchorPosition.x, anchorPosition.z);
+        if (radius > 0.5F) {
+            const float anchorAngle = std::atan2(anchorPosition.x, anchorPosition.z);
+            const float panelAngle = anchorAngle + angle;
+            position.x = std::sin(panelAngle) * radius;
+            position.z = std::cos(panelAngle) * radius;
+        }
+        position.y = anchorPosition.y + (pause ? PauseYOffset : ResultsYOffset);
     }
     return {position, facePlayer(position)};
 }
@@ -195,7 +204,7 @@ BSML::FloatingScreen* createScreen(const char* name, bool pause,
     return screen;
 }
 
-UpNextListCell* makeCell(HMUI::TableView* tableView) {
+UpNextListCell* makeCell(HMUI::TableView* tableView, TMPro::TextMeshProUGUI* typographySource) {
     auto tableCell = tableView->DequeueReusableCellForIdentifier(il2cpp_utils::newcsstr(CellReuseIdentifier));
     if (tableCell == nullptr) {
         tableCell = UnityEngine::GameObject::New_ctor("BeatNext Recommendation Cell")
@@ -207,6 +216,7 @@ UpNextListCell* makeCell(HMUI::TableView* tableView) {
         auto cell = tableCell.cast<UpNextListCell>();
         cell->difficultyTexts =
             cell->difficultiesContainer->GetComponentsInChildren<TMPro::TextMeshProUGUI*>();
+        cell->inheritTypography(typographySource);
     }
     return tableCell.cast<UpNextListCell>();
 }
@@ -243,7 +253,7 @@ void UpNextPanelController::OnDestroy() {
 }
 
 float UpNextPanelController::CellSize() {
-    return 15.5F;
+    return 16.0F;
 }
 
 int UpNextPanelController::NumberOfCells() {
@@ -255,8 +265,8 @@ int UpNextPanelController::NumberOfCells() {
 HMUI::TableCell* UpNextPanelController::CellForIdx(HMUI::TableView* tableView, int index) {
     const auto state = CompositionRoot::instance().state();
     if (index < 0 || static_cast<std::size_t>(index) >= state.items.size())
-        return makeCell(tableView);
-    return makeCell(tableView)->populate(state.items[static_cast<std::size_t>(index)]);
+        return makeCell(tableView, headingText);
+    return makeCell(tableView, headingText)->populate(state.items[static_cast<std::size_t>(index)]);
 }
 
 void UpNextPanelController::SelectSong(UnityW<HMUI::TableView> table, int index) {
