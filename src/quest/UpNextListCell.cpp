@@ -17,13 +17,6 @@ void setText(TMPro::TextMeshProUGUI* target, const std::string& value) {
         target->set_text(il2cpp_utils::newcsstr(value));
 }
 
-void inheritTypography(TMPro::TextMeshProUGUI* target, TMPro::TextMeshProUGUI* source) {
-    if (target == nullptr || source == nullptr)
-        return;
-    target->set_font(source->get_font());
-    target->set_fontSharedMaterial(source->get_fontSharedMaterial());
-}
-
 std::string artists(const Track& track) {
     if (track.artists.empty())
         return "Unknown artist";
@@ -62,15 +55,6 @@ void UpNextListCell::ctor() {
     INVOKE_BASE_CTOR(classof(HMUI::TableCell*));
 }
 
-void UpNextListCell::inheritTypography(TMPro::TextMeshProUGUI* source) {
-    ::beatnext::quest::inheritTypography(titleText, source);
-    ::beatnext::quest::inheritTypography(statusText, source);
-    ::beatnext::quest::inheritTypography(artistText, source);
-    ::beatnext::quest::inheritTypography(mapperText, source);
-    for (auto* text : difficultyTexts)
-        ::beatnext::quest::inheritTypography(text, source);
-}
-
 UpNextListCell* UpNextListCell::populate(const RecommendationItemState& item) {
     const auto& recommendation = item.recommendation;
     setText(titleText, recommendation.track.title);
@@ -90,8 +74,19 @@ UpNextListCell* UpNextListCell::populate(const RecommendationItemState& item) {
     else
         setText(statusText, "");
 
+    titleText->set_fontSize(3.6F);
+    titleText->set_color(UnityEngine::Color::get_white());
+    statusText->set_fontSize(3.0F);
+    statusText->set_color(UnityEngine::Color::get_white());
+    artistText->set_fontSize(2.9F);
+    artistText->set_color(UnityEngine::Color(0.90F, 0.90F, 0.90F, 1.0F));
+    mapperText->set_fontSize(2.8F);
+    mapperText->set_color(UnityEngine::Color(0.78F, 0.78F, 0.78F, 1.0F));
+
     for (int index = 0; index < difficultyTexts.size(); ++index) {
         auto* text = difficultyTexts[index];
+        text->set_fontSize(3.0F);
+        text->set_color(UnityEngine::Color::get_white());
         const bool visible = static_cast<std::size_t>(index) < recommendation.playableDifficulties.size();
         text->get_gameObject()->set_active(visible);
         if (visible)
@@ -107,9 +102,9 @@ void UpNextListCell::refreshBackground() {
     if (background == nullptr)
         return;
     if (get_selected() || get_highlighted())
-        background->set_color(UnityEngine::Color(0.04F, 0.34F, 0.50F, 0.72F));
+        background->set_color(UnityEngine::Color(0.04F, 0.34F, 0.50F, 0.80F));
     else
-        background->set_color(UnityEngine::Color(0.02F, 0.08F, 0.13F, 0.30F));
+        background->set_color(UnityEngine::Color(0.0F, 0.0F, 0.0F, 0.45F));
 }
 
 void UpNextListCell::SelectionDidChange(HMUI::SelectableCell::TransitionType) {

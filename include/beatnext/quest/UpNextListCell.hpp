@@ -15,16 +15,15 @@ DECLARE_CLASS_CODEGEN(beatnext::quest, UpNextListCell, HMUI::TableCell) {
     DECLARE_OVERRIDE_METHOD_MATCH(void, HighlightDidChange, &HMUI::SelectableCell::HighlightDidChange,
                                   HMUI::SelectableCell::TransitionType transitionType);
     DECLARE_OVERRIDE_METHOD_MATCH(void, WasPreparedForReuse, &HMUI::TableCell::WasPreparedForReuse);
-    DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, titleText);
-    DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, statusText);
-    DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, artistText);
-    DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, mapperText);
+    DECLARE_INSTANCE_FIELD(TMPro::TextMeshProUGUI*, titleText);
+    DECLARE_INSTANCE_FIELD(TMPro::TextMeshProUGUI*, statusText);
+    DECLARE_INSTANCE_FIELD(TMPro::TextMeshProUGUI*, artistText);
+    DECLARE_INSTANCE_FIELD(TMPro::TextMeshProUGUI*, mapperText);
     DECLARE_INSTANCE_FIELD(ArrayW<TMPro::TextMeshProUGUI*>, difficultyTexts);
-    DECLARE_INSTANCE_FIELD(UnityW<UnityEngine::UI::HorizontalOrVerticalLayoutGroup>, difficultiesContainer);
-    DECLARE_INSTANCE_FIELD(UnityW<HMUI::ImageView>, background);
+    DECLARE_INSTANCE_FIELD(UnityEngine::UI::HorizontalOrVerticalLayoutGroup*, difficultiesContainer);
+    DECLARE_INSTANCE_FIELD(HMUI::ImageView*, background);
 
   public:
-    void inheritTypography(TMPro::TextMeshProUGUI * source);
     UpNextListCell* populate(const RecommendationItemState& item);
     void refreshBackground();
 };

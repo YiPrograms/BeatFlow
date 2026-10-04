@@ -38,17 +38,17 @@ SafePtrUnity<BSML::FloatingScreen> pauseScreen;
 SongSelectionNavigator navigator;
 
 constexpr std::string_view CellReuseIdentifier = "BeatNextRecommendationCell";
-constexpr UnityEngine::Vector2 PanelSize{142.0F, 96.0F};
+constexpr UnityEngine::Vector2 PanelSize{128.0F, 104.0F};
 constexpr float PanelScale = 0.022F;
 constexpr float FallbackPanelZ = 2.8F;
 constexpr float ResultsFallbackY = 1.85F;
 constexpr float PauseFallbackY = 1.65F;
-constexpr float ResultsYOffset = 0.22F;
-constexpr float PauseYOffset = 0.12F;
+constexpr float ResultsYOffset = 0.35F;
+constexpr float PauseYOffset = 0.80F;
 constexpr float RadiansToDegrees = 57.2957795F;
 constexpr float DegreesToRadians = 0.0174532925F;
-constexpr float ResultsAngleOffset = 32.0F;
-constexpr float PauseAngleOffset = 27.0F;
+constexpr float ResultsAngleOffset = 52.0F;
+constexpr float PauseAngleOffset = 52.0F;
 
 struct PanelPlacement {
     UnityEngine::Vector3 position;
@@ -204,7 +204,7 @@ BSML::FloatingScreen* createScreen(const char* name, bool pause,
     return screen;
 }
 
-UpNextListCell* makeCell(HMUI::TableView* tableView, TMPro::TextMeshProUGUI* typographySource) {
+UpNextListCell* makeCell(HMUI::TableView* tableView) {
     auto tableCell = tableView->DequeueReusableCellForIdentifier(il2cpp_utils::newcsstr(CellReuseIdentifier));
     if (tableCell == nullptr) {
         tableCell = UnityEngine::GameObject::New_ctor("BeatNext Recommendation Cell")
@@ -216,7 +216,6 @@ UpNextListCell* makeCell(HMUI::TableView* tableView, TMPro::TextMeshProUGUI* typ
         auto cell = tableCell.cast<UpNextListCell>();
         cell->difficultyTexts =
             cell->difficultiesContainer->GetComponentsInChildren<TMPro::TextMeshProUGUI*>();
-        cell->inheritTypography(typographySource);
     }
     return tableCell.cast<UpNextListCell>();
 }
@@ -253,7 +252,7 @@ void UpNextPanelController::OnDestroy() {
 }
 
 float UpNextPanelController::CellSize() {
-    return 16.0F;
+    return 14.0F;
 }
 
 int UpNextPanelController::NumberOfCells() {
@@ -265,8 +264,8 @@ int UpNextPanelController::NumberOfCells() {
 HMUI::TableCell* UpNextPanelController::CellForIdx(HMUI::TableView* tableView, int index) {
     const auto state = CompositionRoot::instance().state();
     if (index < 0 || static_cast<std::size_t>(index) >= state.items.size())
-        return makeCell(tableView, headingText);
-    return makeCell(tableView, headingText)->populate(state.items[static_cast<std::size_t>(index)]);
+        return makeCell(tableView);
+    return makeCell(tableView)->populate(state.items[static_cast<std::size_t>(index)]);
 }
 
 void UpNextPanelController::SelectSong(UnityW<HMUI::TableView> table, int index) {

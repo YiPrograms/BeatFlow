@@ -1,23 +1,22 @@
-<vertical id='background' bg='round-rect-panel' bg-color='#0515214D' pad='1.2' pad-bottom='1.2'
+<vertical id='background' bg='round-rect-panel' pad='1' pad-bottom='2'
           horizontal-fit='Unconstrained' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
           xsi:noNamespaceSchemaLocation='https://raw.githubusercontent.com/RedBrumbler/Quest-BSML-Docs/gh-pages/schema.xsd'>
-  <horizontal spacing='2' preferred-height='4.8'>
-    <text id='titleText' text='Song title' font-size='4.1' color='#FFFFFF' align='MidlineLeft' overflow-mode='Ellipsis'
+  <horizontal spacing='3'>
+    <text id='titleText' text='Song title' align='MidlineLeft' overflow-mode='Ellipsis'
           word-wrapping='false' rich-text='false'/>
-    <text id='statusText' text='' font-size='3.1' color='#FFFFFF' align='MidlineRight' word-wrapping='false'/>
+    <text id='statusText' text='' align='MidlineRight' word-wrapping='false'/>
   </horizontal>
-  <horizontal spacing='2' preferred-height='4'>
-    <text id='artistText' text='Artist' font-size='3.2' color='#E6E6E6' align='MidlineLeft'
+  <horizontal pad-top='1' pad-bottom='2' spacing='2'>
+    <text id='artistText' text='Artist' align='MidlineLeft'
           overflow-mode='Ellipsis' word-wrapping='false' rich-text='false'/>
-    <text id='mapperText' text='Mapper' font-size='3' color='#CBCBCB' align='MidlineRight'
+    <text id='mapperText' text='Mapper' align='MidlineRight'
           overflow-mode='Ellipsis' word-wrapping='false'/>
   </horizontal>
-  <horizontal id='difficultiesContainer' bg='round-rect-panel' bg-color='#00000059'
-              preferred-height='4.4' spacing='0.5'>
-    <text text='' font-size='3.2' color='#FFFFFF' align='Center' overflow-mode='Truncate'/>
-    <text text='' font-size='3.2' color='#FFFFFF' align='Center' overflow-mode='Truncate'/>
-    <text text='' font-size='3.2' color='#FFFFFF' align='Center' overflow-mode='Truncate'/>
-    <text text='' font-size='3.2' color='#FFFFFF' align='Center' overflow-mode='Truncate'/>
-    <text text='' font-size='3.2' color='#FFFFFF' align='Center' overflow-mode='Truncate'/>
+  <horizontal id='difficultiesContainer' bg='round-rect-panel' bg-color='#000000DD'>
+    <text text='' align='Center' overflow-mode='Truncate'/>
+    <text text='' align='Center' overflow-mode='Truncate'/>
+    <text text='' align='Center' overflow-mode='Truncate'/>
+    <text text='' align='Center' overflow-mode='Truncate'/>
+    <text text='' align='Center' overflow-mode='Truncate'/>
   </horizontal>
 </vertical>
