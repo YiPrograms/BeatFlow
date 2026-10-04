@@ -19,6 +19,8 @@ It publishes typed progress events for resolution, radio loading, and bounded ma
 
 `YouTubeMusicProvider` implements only anonymous InnerTube `search` and `next`. `SongDetailsCatalog` prefers the local SongDetails database and falls back to BeatSaver search. HTTP retries are bounded and honor server backoff. Anonymous response caches are bounded, versioned JSON envelopes written atomically.
 
+`QuestHttpClient` verifies HTTPS against the Quest system certificate store. It currently owns a statically linked curl transport because WebUtils 0.6.9 does not configure a CA store when verification is enabled. Its default mode disables certificate verification, so it is not a suitable transport for BeatNext. Keep this decision behind the `HttpClient` boundary so a future shared transport can replace it without changing providers or the recommendation core.
+
 `QuestMapInstaller` implements the narrow `MapInstaller` boundary. It stages and validates archives before publishing them to SongCore's preferred custom-song directory. It rejects unsafe paths, links, excessive file counts, and archives without `Info.dat`. `SongSelectionNavigator` separately owns navigation into Solo.
 
 ## Quest integration
