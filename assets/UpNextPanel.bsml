@@ -1,186 +1,23 @@
-<vertical preferred-width='128' preferred-height='92' bg='round-rect-panel' pad='2' spacing='1'
+<vertical preferred-width='142' preferred-height='96' bg='round-rect-panel' pad='2' spacing='1'
           child-expand-height='false' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
           xsi:noNamespaceSchemaLocation='https://raw.githubusercontent.com/RedBrumbler/Quest-BSML-Docs/gh-pages/schema.xsd'>
   <text id='headingText' text='BeatNext' font-size='6' align='Center' preferred-height='7'/>
-  <text id='statusText' text='Finding recommendations…' font-size='3.8' align='Center'
-        preferred-height='6' word-wrapping='true'/>
-  <horizontal preferred-height='73' child-expand-height='false' spacing='2'>
-    <vertical preferred-width='82' preferred-height='73'>
-      <scroll-view preferred-height='73'>
-        <vertical child-expand-height='false' spacing='0.8'>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item0Button' on-click='Select0' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item0MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item0DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item1Button' on-click='Select1' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item1MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item1DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item2Button' on-click='Select2' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item2MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item2DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item3Button' on-click='Select3' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item3MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item3DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item4Button' on-click='Select4' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item4MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item4DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item5Button' on-click='Select5' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item5MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item5DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item6Button' on-click='Select6' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item6MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item6DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item7Button' on-click='Select7' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item7MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item7DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item8Button' on-click='Select8' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item8MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item8DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item9Button' on-click='Select9' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item9MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item9DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item10Button' on-click='Select10' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item10MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item10DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item11Button' on-click='Select11' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item11MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item11DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item12Button' on-click='Select12' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item12MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item12DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item13Button' on-click='Select13' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item13MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item13DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item14Button' on-click='Select14' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item14MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item14DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item15Button' on-click='Select15' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item15MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item15DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item16Button' on-click='Select16' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item16MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item16DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item17Button' on-click='Select17' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item17MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item17DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item18Button' on-click='Select18' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item18MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item18DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-          <vertical preferred-height='14' child-expand-height='false' spacing='0.3'>
-            <button id='item19Button' on-click='Select19' text='Recommendation' preferred-height='6.2'
-                    horizontal-fit='Unconstrained' font-size='3.7'/>
-            <text id='item19MetaText' text='' preferred-height='3' font-size='2.8' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-            <text id='item19DifficultyText' text='' preferred-height='3.4' font-size='3' align='MidlineLeft'
-                  overflow-mode='Ellipsis' word-wrapping='false'/>
-          </vertical>
-        </vertical>
-      </scroll-view>
+  <text id='statusText' text='Finding recommendations…' font-size='3.7' align='Center'
+        preferred-height='5.5' word-wrapping='true'/>
+  <horizontal preferred-height='78' child-expand-height='false' spacing='2'>
+    <vertical preferred-width='90' preferred-height='78'>
+      <list id='songList' select-cell='SelectSong' show-scrollbar='true'/>
     </vertical>
-    <vertical preferred-width='40' preferred-height='73' bg='round-rect-panel' pad='2' spacing='1'
+    <vertical preferred-width='46' preferred-height='78' bg='round-rect-panel' pad='2' spacing='1'
               child-expand-height='false'>
-      <text id='detailTitleText' text='Select a recommendation' font-size='4.4' align='Center'
-            preferred-height='11' word-wrapping='true' overflow-mode='Ellipsis'/>
-      <text id='detailArtistText' text='' font-size='3.5' color='#DDDDDD' align='Center'
-            preferred-height='6' word-wrapping='true' overflow-mode='Ellipsis'/>
-      <image id='detailImage' preferred-width='24' preferred-height='24' preserve-aspect='true'/>
-      <text id='detailMetaText' text='' font-size='3.3' align='Center' preferred-height='6'
+      <text id='detailTitleText' text='Select a recommendation' font-size='4.3' align='Center'
+            preferred-height='12' word-wrapping='true' overflow-mode='Ellipsis' rich-text='false'/>
+      <text id='detailArtistText' text='' font-size='3.4' color='#DDDDDD' align='Center'
+            preferred-height='7' word-wrapping='true' overflow-mode='Ellipsis' rich-text='false'/>
+      <image id='detailImage' preferred-width='27' preferred-height='27' preserve-aspect='true'/>
+      <text id='detailMetaText' text='' font-size='3.1' align='Center' preferred-height='6'
             word-wrapping='true' overflow-mode='Ellipsis'/>
-      <text id='detailDifficultyText' text='' font-size='3.3' align='Center' preferred-height='7'
+      <text id='detailDifficultyText' text='' font-size='3.1' align='Center' preferred-height='7'
             word-wrapping='true' overflow-mode='Ellipsis'/>
       <primary-button id='actionButton' on-click='Action' text='Play' preferred-height='8' font-size='4'/>
     </vertical>

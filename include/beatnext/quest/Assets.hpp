@@ -2,4 +2,5 @@
 #include "kaleb/shared/kaleb.hpp"
 
 DECLARE_FILE(_binary_Settings_bsml, Assets, Settings_bsml);
+DECLARE_FILE(_binary_UpNextListCell_bsml, Assets, UpNextListCell_bsml);
 DECLARE_FILE(_binary_UpNextPanel_bsml, Assets, UpNextPanel_bsml);

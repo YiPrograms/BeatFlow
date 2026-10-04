@@ -13,7 +13,12 @@ class SongSelectionNavigator {
     void open(const std::string& hash, Callback callback = {});
 
   private:
-    void selectWhenReady(const std::string& hash, int attemptsRemaining, Callback callback);
+    void verifyWhenReady(const std::string& hash, int attemptsRemaining, Callback callback);
 };
+
+namespace song_selection_navigation {
+void requestCustomCategory();
+bool consumeCustomCategoryRequest();
+} // namespace song_selection_navigation
 
 } // namespace beatnext::quest

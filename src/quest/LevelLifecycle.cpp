@@ -2,13 +2,18 @@
 
 #include "beatnext/quest/CompositionRoot.hpp"
 #include "beatnext/quest/Logger.hpp"
+#include "beatnext/quest/SongSelectionNavigator.hpp"
 #include "beatnext/quest/UpNextPanelController.hpp"
 
+#include "GlobalNamespace/BeatmapLevelPack.hpp"
 #include "GlobalNamespace/LevelCompletionResults.hpp"
+#include "GlobalNamespace/LevelFilteringNavigationController.hpp"
 #include "GlobalNamespace/MultiplayerLevelScenesTransitionSetupDataSO.hpp"
 #include "GlobalNamespace/PauseMenuManager.hpp"
 #include "GlobalNamespace/PlayerSpecificSettings.hpp"
 #include "GlobalNamespace/ResultsViewController.hpp"
+#include "GlobalNamespace/SelectLevelCategoryViewController.hpp"
+#include "GlobalNamespace/SongPackMask.hpp"
 #include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
 #include "beatsaber-hook/shared/utils/hooking.hpp"
 
@@ -16,6 +21,22 @@ namespace beatnext::quest {
 namespace {
 
 bool soloLevelActive = false;
+
+MAKE_HOOK_MATCH(LevelFilteringSetup, &GlobalNamespace::LevelFilteringNavigationController::Setup, void,
+                GlobalNamespace::LevelFilteringNavigationController* self,
+                GlobalNamespace::SongPackMask songPackMask,
+                GlobalNamespace::BeatmapLevelPack* levelPackToBeSelectedAfterPresent,
+                GlobalNamespace::SelectLevelCategoryViewController_LevelCategory startLevelCategory,
+                bool hidePacksIfOneOrNone, bool enableCustomLevels) {
+    LevelFilteringSetup(self, songPackMask, levelPackToBeSelectedAfterPresent, startLevelCategory,
+                        hidePacksIfOneOrNone, enableCustomLevels);
+    if (song_selection_navigation::consumeCustomCategoryRequest()) {
+        self->____selectLevelCategoryViewController->Setup(
+            GlobalNamespace::SelectLevelCategoryViewController_LevelCategory::CustomSongs,
+            self->____enabledLevelCategories);
+        logger.info("Opened BeatNext selection in the Custom Songs category");
+    }
+}
 
 MAKE_HOOK_MATCH(StandardLevelStarted,
                 &GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::InitAndSetupScenes, void,
@@ -87,6 +108,7 @@ MAKE_HOOK_MATCH(PauseExited, &GlobalNamespace::PauseMenuManager::MenuButtonPress
 } // namespace
 
 void installLevelLifecycleHooks() {
+    INSTALL_HOOK(logger, LevelFilteringSetup);
     INSTALL_HOOK(logger, StandardLevelStarted);
     INSTALL_HOOK(logger, MultiplayerLevelStarted);
     INSTALL_HOOK(logger, ResultsActivated);

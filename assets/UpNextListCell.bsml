@@ -1,0 +1,23 @@
+<vertical id='background' bg='round-rect-panel' bg-color='#00000073' pad='1' pad-bottom='1.5'
+          horizontal-fit='Unconstrained' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+          xsi:noNamespaceSchemaLocation='https://raw.githubusercontent.com/RedBrumbler/Quest-BSML-Docs/gh-pages/schema.xsd'>
+  <horizontal spacing='2' preferred-height='4.2'>
+    <text id='titleText' text='Song title' font-size='3.4' align='MidlineLeft' overflow-mode='Ellipsis'
+          word-wrapping='false' rich-text='false'/>
+    <text id='statusText' text='' font-size='2.7' align='MidlineRight' word-wrapping='false'/>
+  </horizontal>
+  <horizontal spacing='2' preferred-height='3.5'>
+    <text id='artistText' text='Artist' font-size='2.7' color='#DDDDDD' align='MidlineLeft'
+          overflow-mode='Ellipsis' word-wrapping='false' rich-text='false'/>
+    <text id='mapperText' text='Mapper' font-size='2.6' color='#CCCCCC' align='MidlineRight'
+          overflow-mode='Ellipsis' word-wrapping='false'/>
+  </horizontal>
+  <horizontal id='difficultiesContainer' bg='round-rect-panel' bg-color='#000000CC'
+              preferred-height='4' spacing='0.5'>
+    <text text='' font-size='2.9' align='Center' overflow-mode='Truncate'/>
+    <text text='' font-size='2.9' align='Center' overflow-mode='Truncate'/>
+    <text text='' font-size='2.9' align='Center' overflow-mode='Truncate'/>
+    <text text='' font-size='2.9' align='Center' overflow-mode='Truncate'/>
+    <text text='' font-size='2.9' align='Center' overflow-mode='Truncate'/>
+  </horizontal>
+</vertical>

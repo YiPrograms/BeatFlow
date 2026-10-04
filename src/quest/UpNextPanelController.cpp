@@ -3,7 +3,11 @@
 #include "beatnext/quest/Assets.hpp"
 #include "beatnext/quest/Logger.hpp"
 #include "beatnext/quest/SongSelectionNavigator.hpp"
+#include "beatnext/quest/UpNextListCell.hpp"
 
+#include "GlobalNamespace/MainFlowCoordinator.hpp"
+#include "GlobalNamespace/SoloFreePlayFlowCoordinator.hpp"
+#include "HMUI/Touchable.hpp"
 #include "TMPro/TextOverflowModes.hpp"
 #include "UnityEngine/Canvas.hpp"
 #include "UnityEngine/GameObject.hpp"
@@ -20,8 +24,8 @@
 #include "bsml/shared/Helpers/utilities.hpp"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
+#include <limits>
 #include <sstream>
 
 DEFINE_TYPE(beatnext::quest, UpNextPanelController);
@@ -33,13 +37,15 @@ SafePtrUnity<BSML::FloatingScreen> resultsScreen;
 SafePtrUnity<BSML::FloatingScreen> pauseScreen;
 SongSelectionNavigator navigator;
 
-constexpr UnityEngine::Vector2 PanelSize{128.0F, 92.0F};
-constexpr float PanelScale = 0.022F;
-constexpr float PanelRightOffset = 2.25F;
-constexpr float FallbackPanelX = 2.25F;
+constexpr std::string_view CellReuseIdentifier = "BeatNextRecommendationCell";
+constexpr UnityEngine::Vector2 PanelSize{142.0F, 96.0F};
+constexpr float PanelScale = 0.021F;
+constexpr float PanelRightOffset = 3.15F;
 constexpr float FallbackPanelZ = 2.8F;
-constexpr float ResultsFallbackY = 1.62F;
-constexpr float PauseFallbackY = 1.48F;
+constexpr float ResultsFallbackY = 1.85F;
+constexpr float PauseFallbackY = 1.65F;
+constexpr float ResultsYOffset = 0.22F;
+constexpr float PauseYOffset = 0.12F;
 constexpr float RadiansToDegrees = 57.2957795F;
 
 struct PanelPlacement {
@@ -48,25 +54,35 @@ struct PanelPlacement {
 };
 
 UnityEngine::Quaternion facePlayer(const UnityEngine::Vector3& position) {
-    // Beat Saber's menu origin is the player's forward-facing reference point.
-    // Positive yaw turns a screen on the player's right back toward that origin.
     const float yaw = std::atan2(position.x, position.z) * RadiansToDegrees;
     return UnityEngine::Quaternion::Euler(0.0F, yaw, 0.0F);
 }
 
 PanelPlacement placeBeside(UnityEngine::Transform* anchor, bool pause) {
+    UnityEngine::Vector3 position(PanelRightOffset, pause ? PauseFallbackY : ResultsFallbackY,
+                                  FallbackPanelZ);
     if (anchor != nullptr) {
-        auto position = anchor->get_position();
-        const auto right = anchor->get_right();
-        position.x += right.x * PanelRightOffset;
-        position.y += right.y * PanelRightOffset;
-        position.z += right.z * PanelRightOffset;
-        return {position, anchor->get_rotation()};
+        position = anchor->get_position();
+        position.x += PanelRightOffset;
+        position.y += pause ? PauseYOffset : ResultsYOffset;
     }
-
-    const UnityEngine::Vector3 position(FallbackPanelX, pause ? PauseFallbackY : ResultsFallbackY,
-                                        FallbackPanelZ);
     return {position, facePlayer(position)};
+}
+
+void followHost(BSML::FloatingScreen* screen, UnityEngine::Transform* anchor, bool pause,
+                int framesRemaining) {
+    if (screen == nullptr || anchor == nullptr || framesRemaining <= 0)
+        return;
+    SafePtrUnity<BSML::FloatingScreen> safeScreen(screen);
+    SafePtrUnity<UnityEngine::Transform> safeAnchor(anchor);
+    BSML::MainThreadScheduler::ScheduleNextFrame([safeScreen, safeAnchor, pause, framesRemaining]() mutable {
+        if (!safeScreen || !safeAnchor)
+            return;
+        const auto placement = placeBeside(safeAnchor.ptr(), pause);
+        safeScreen.ptr()->get_transform()->set_position(placement.position);
+        safeScreen.ptr()->get_transform()->set_rotation(placement.rotation);
+        followHost(safeScreen.ptr(), safeAnchor.ptr(), pause, framesRemaining - 1);
+    });
 }
 
 void setText(TMPro::TextMeshProUGUI* target, const std::string& value) {
@@ -96,62 +112,51 @@ std::string difficulties(const RecommendedMap& recommendation) {
     return value.str();
 }
 
-std::string difficultyColor(Difficulty difficulty) {
-    switch (difficulty) {
-    case Difficulty::Easy:
-        return "#78D58A";
-    case Difficulty::Normal:
-        return "#69C9F0";
-    case Difficulty::Hard:
-        return "#F3C85B";
-    case Difficulty::Expert:
-        return "#F07A76";
-    case Difficulty::ExpertPlus:
-        return "#C68AF4";
-    }
-    return "#EEEEEE";
-}
-
-std::string rowDifficulties(const RecommendedMap& recommendation) {
-    std::ostringstream value;
-    for (std::size_t index = 0; index < recommendation.playableDifficulties.size(); ++index) {
-        if (index != 0)
-            value << "   ";
-        const auto difficulty = recommendation.playableDifficulties[index].difficulty;
-        value << "<color=" << difficultyColor(difficulty) << ">" << toString(difficulty) << "</color>";
-    }
-    return value.str();
-}
-
 bool isInstalled(const RecommendationItemState& item) {
     return item.recommendation.installed || item.status == RecommendationItemStatus::Installed;
 }
 
-std::string rowMeta(const RecommendationItemState& item) {
-    std::ostringstream value;
-    value << "Mapped by " << item.recommendation.map.mapper << " · "
-          << static_cast<int>(std::round(item.recommendation.map.rating * 100.0)) << "%";
-    if (item.status == RecommendationItemStatus::Downloading)
-        value << " · <color=#69C9F0>Downloading…</color>";
-    else if (item.status == RecommendationItemStatus::Failed)
-        value << " · <color=#F07A76>Download failed</color>";
-    else if (isInstalled(item))
-        value << " · <color=#78D58A>Downloaded</color>";
-    return value.str();
-}
-
-void afterMenuReady(std::function<void()> action, int attemptsRemaining = 300) {
+void afterMainMenuReady(std::function<void()> action, int attemptsRemaining = 300) {
     BSML::MainThreadScheduler::ScheduleNextFrame([action = std::move(action), attemptsRemaining]() mutable {
-        auto current = BSML::Helpers::GetMainFlowCoordinator()->YoungestChildFlowCoordinatorOrSelf();
-        const bool ready = current != nullptr && current->get_isActivated() &&
-                           !current->get_isInTransition() &&
+        auto* main = BSML::Helpers::GetMainFlowCoordinator();
+        auto current = main == nullptr ? UnityW<HMUI::FlowCoordinator>(nullptr)
+                                       : main->YoungestChildFlowCoordinatorOrSelf();
+        const bool ready = main != nullptr && current == main && main->get_isActivated() &&
+                           !main->get_isInTransition() &&
                            UnityEngine::GameObject::Find("SoloButton") != nullptr;
         if (ready) {
             action();
         } else if (attemptsRemaining > 0) {
-            afterMenuReady(std::move(action), attemptsRemaining - 1);
+            afterMainMenuReady(std::move(action), attemptsRemaining - 1);
         } else {
-            logger.error("Beat Saber's main menu did not become ready for Up Next navigation");
+            logger.error("Beat Saber's main menu did not become ready for BeatNext navigation");
+        }
+    });
+}
+
+void leaveSongPickerThen(std::function<void()> action, int attemptsRemaining = 300) {
+    BSML::MainThreadScheduler::ScheduleNextFrame([action = std::move(action), attemptsRemaining]() mutable {
+        auto* main = BSML::Helpers::GetMainFlowCoordinator();
+        auto current = main == nullptr ? UnityW<HMUI::FlowCoordinator>(nullptr)
+                                       : main->YoungestChildFlowCoordinatorOrSelf();
+        if (main != nullptr && current == main && main->get_isActivated() && !main->get_isInTransition()) {
+            afterMainMenuReady(std::move(action));
+            return;
+        }
+
+        auto* solo =
+            BSML::Helpers::GetDiContainer()->Resolve<GlobalNamespace::SoloFreePlayFlowCoordinator*>();
+        if (solo != nullptr && current == solo && solo->get_isActivated() && !solo->get_isInTransition()) {
+            logger.info("Closing the existing Solo picker before opening the recommended map");
+            solo->HandleScreenSystemBackButtonWasPressed();
+            afterMainMenuReady(std::move(action));
+            return;
+        }
+
+        if (attemptsRemaining > 0) {
+            leaveSongPickerThen(std::move(action), attemptsRemaining - 1);
+        } else {
+            logger.error("The existing Solo picker did not become ready to close");
         }
     });
 }
@@ -159,8 +164,12 @@ void afterMenuReady(std::function<void()> action, int attemptsRemaining = 300) {
 void openInSolo(const std::string& hash) {
     navigator.open(hash, [](Outcome<bool> opened) {
         if (!opened)
-            logger.error("Could not open the Up Next map in Solo: {}", opened.error().message);
+            logger.error("Could not open the BeatNext map in Solo: {}", opened.error().message);
     });
+}
+
+void returnToMainAndOpen(const std::string& hash) {
+    leaveSongPickerThen([hash] { openInSolo(hash); });
 }
 
 BSML::FloatingScreen* createScreen(const char* name, bool pause,
@@ -180,7 +189,26 @@ BSML::FloatingScreen* createScreen(const char* name, bool pause,
         canvas->set_sortingOrder(31);
     auto* panel = screen->get_gameObject()->AddComponent<UpNextPanelController*>();
     panel->bind(pause, pauseManager, resultsView);
+    followHost(screen, anchor, pause, 45);
+    logger.info("Created {} panel at ({:.2f}, {:.2f}, {:.2f})", pause ? "pause" : "results",
+                placement.position.x, placement.position.y, placement.position.z);
     return screen;
+}
+
+UpNextListCell* makeCell(HMUI::TableView* tableView) {
+    auto tableCell = tableView->DequeueReusableCellForIdentifier(il2cpp_utils::newcsstr(CellReuseIdentifier));
+    if (tableCell == nullptr) {
+        tableCell = UnityEngine::GameObject::New_ctor("BeatNext Recommendation Cell")
+                        ->AddComponent<UpNextListCell*>();
+        tableCell->set_interactable(true);
+        tableCell->set_reuseIdentifier(il2cpp_utils::newcsstr(CellReuseIdentifier));
+        BSML::parse_and_construct(Assets::UpNextListCell_bsml, tableCell->get_transform(), tableCell);
+        tableCell->get_gameObject()->AddComponent<HMUI::Touchable*>();
+        auto cell = tableCell.cast<UpNextListCell>();
+        cell->difficultyTexts =
+            cell->difficultiesContainer->GetComponentsInChildren<TMPro::TextMeshProUGUI*>();
+    }
+    return tableCell.cast<UpNextListCell>();
 }
 
 } // namespace
@@ -198,6 +226,8 @@ void UpNextPanelController::bind(bool isPause, GlobalNamespace::PauseMenuManager
     pauseManager = pause;
     resultsView = results;
     BSML::parse_and_construct(Assets::UpNextPanel_bsml, get_transform(), this);
+    if (songList != nullptr)
+        songList->tableView->SetDataSource(reinterpret_cast<HMUI::TableView::IDataSource*>(this), false);
     SafePtrUnity<UpNextPanelController> panel(this);
     subscription = CompositionRoot::instance().subscribe([panel](const RecommendationSessionState& state) {
         if (panel)
@@ -212,6 +242,29 @@ void UpNextPanelController::OnDestroy() {
     }
 }
 
+float UpNextPanelController::CellSize() {
+    return 15.5F;
+}
+
+int UpNextPanelController::NumberOfCells() {
+    const auto count = CompositionRoot::instance().state().items.size();
+    return static_cast<int>(
+        std::min<std::size_t>(count, static_cast<std::size_t>(std::numeric_limits<int>::max())));
+}
+
+HMUI::TableCell* UpNextPanelController::CellForIdx(HMUI::TableView* tableView, int index) {
+    const auto state = CompositionRoot::instance().state();
+    if (index < 0 || static_cast<std::size_t>(index) >= state.items.size())
+        return makeCell(tableView);
+    return makeCell(tableView)->populate(state.items[static_cast<std::size_t>(index)]);
+}
+
+void UpNextPanelController::SelectSong(UnityW<HMUI::TableView> table, int index) {
+    if (table == nullptr || index < 0)
+        return;
+    CompositionRoot::instance().select(static_cast<std::size_t>(index));
+}
+
 void UpNextPanelController::render(const RecommendationSessionState& state) {
     setText(headingText, state.stale ? "BeatNext · Cached/offline" : "BeatNext");
     if (state.loading)
@@ -223,45 +276,14 @@ void UpNextPanelController::render(const RecommendationSessionState& state) {
     else
         setText(statusText, std::to_string(state.items.size()) + " recommendations");
 
-    const std::array<UnityEngine::UI::Button*, 20> buttons{
-        item0Button,  item1Button,  item2Button,  item3Button,  item4Button,  item5Button,  item6Button,
-        item7Button,  item8Button,  item9Button,  item10Button, item11Button, item12Button, item13Button,
-        item14Button, item15Button, item16Button, item17Button, item18Button, item19Button};
-    const std::array<TMPro::TextMeshProUGUI*, 20> metaTexts{
-        item0MetaText,  item1MetaText,  item2MetaText,  item3MetaText,  item4MetaText,
-        item5MetaText,  item6MetaText,  item7MetaText,  item8MetaText,  item9MetaText,
-        item10MetaText, item11MetaText, item12MetaText, item13MetaText, item14MetaText,
-        item15MetaText, item16MetaText, item17MetaText, item18MetaText, item19MetaText};
-    const std::array<TMPro::TextMeshProUGUI*, 20> difficultyTexts{
-        item0DifficultyText,  item1DifficultyText,  item2DifficultyText,  item3DifficultyText,
-        item4DifficultyText,  item5DifficultyText,  item6DifficultyText,  item7DifficultyText,
-        item8DifficultyText,  item9DifficultyText,  item10DifficultyText, item11DifficultyText,
-        item12DifficultyText, item13DifficultyText, item14DifficultyText, item15DifficultyText,
-        item16DifficultyText, item17DifficultyText, item18DifficultyText, item19DifficultyText};
-    for (std::size_t index = 0; index < buttons.size(); ++index) {
-        const bool visible = index < state.items.size();
-        if (buttons[index] == nullptr || metaTexts[index] == nullptr || difficultyTexts[index] == nullptr)
-            continue;
-        buttons[index]->get_gameObject()->set_active(visible);
-        metaTexts[index]->get_gameObject()->set_active(visible);
-        difficultyTexts[index]->get_gameObject()->set_active(visible);
-        if (!visible)
-            continue;
-        const auto& item = state.items[index];
-        const auto title = artists(item.recommendation.track) + " — " + item.recommendation.track.title;
-        auto* titleText = buttons[index]->GetComponentInChildren<TMPro::TextMeshProUGUI*>();
-        setText(titleText, title);
-        if (titleText != nullptr) {
-            titleText->set_enableWordWrapping(false);
-            titleText->set_overflowMode(TMPro::TextOverflowModes::Ellipsis);
-            titleText->set_richText(false);
-        }
-        setText(metaTexts[index], rowMeta(item));
-        setText(difficultyTexts[index], rowDifficulties(item.recommendation));
+    if (songList != nullptr && songList->tableView != nullptr) {
+        songList->tableView->ReloadData();
+        if (state.selectedIndex && *state.selectedIndex < state.items.size())
+            songList->tableView->SelectCellWithIdx(static_cast<int>(*state.selectedIndex), false);
     }
 
     if (!state.selectedIndex || *state.selectedIndex >= state.items.size()) {
-        setText(detailTitleText, state.loading ? "Preparing Up Next" : "Select a recommendation");
+        setText(detailTitleText, state.loading ? "Preparing BeatNext" : "Select a recommendation");
         setText(detailArtistText, "");
         setText(detailMetaText, "");
         setText(detailDifficultyText, "");
@@ -310,71 +332,6 @@ void UpNextPanelController::render(const RecommendationSessionState& state) {
     }
 }
 
-void UpNextPanelController::Select0() {
-    select(0);
-}
-void UpNextPanelController::Select1() {
-    select(1);
-}
-void UpNextPanelController::Select2() {
-    select(2);
-}
-void UpNextPanelController::Select3() {
-    select(3);
-}
-void UpNextPanelController::Select4() {
-    select(4);
-}
-void UpNextPanelController::Select5() {
-    select(5);
-}
-void UpNextPanelController::Select6() {
-    select(6);
-}
-void UpNextPanelController::Select7() {
-    select(7);
-}
-void UpNextPanelController::Select8() {
-    select(8);
-}
-void UpNextPanelController::Select9() {
-    select(9);
-}
-void UpNextPanelController::Select10() {
-    select(10);
-}
-void UpNextPanelController::Select11() {
-    select(11);
-}
-void UpNextPanelController::Select12() {
-    select(12);
-}
-void UpNextPanelController::Select13() {
-    select(13);
-}
-void UpNextPanelController::Select14() {
-    select(14);
-}
-void UpNextPanelController::Select15() {
-    select(15);
-}
-void UpNextPanelController::Select16() {
-    select(16);
-}
-void UpNextPanelController::Select17() {
-    select(17);
-}
-void UpNextPanelController::Select18() {
-    select(18);
-}
-void UpNextPanelController::Select19() {
-    select(19);
-}
-
-void UpNextPanelController::select(std::size_t index) {
-    CompositionRoot::instance().select(index);
-}
-
 void UpNextPanelController::Action() {
     const auto state = CompositionRoot::instance().state();
     if (!state.selectedIndex || *state.selectedIndex >= state.items.size())
@@ -394,14 +351,14 @@ void UpNextPanelController::Action() {
         if (resultsView != nullptr)
             resultsView->ContinueButtonPressed();
         up_next_ui::hideResults();
-        afterMenuReady([hash] { openInSolo(hash); });
+        returnToMainAndOpen(hash);
         return;
     }
 
     SafePtrUnity<UpNextPanelController> panel(this);
     CompositionRoot::instance().prepare(index, [panel](Outcome<std::string> prepared) mutable {
         if (panel && prepared)
-            logger.info("Downloaded Up Next map {}; waiting for the user to press Play", prepared.value());
+            logger.info("Downloaded BeatNext map {}; waiting for the user to press Play", prepared.value());
     });
 }
 
@@ -415,7 +372,7 @@ void UpNextPanelController::ConfirmExit() {
     if (pauseManager != nullptr)
         pauseManager->MenuButtonPressed();
     up_next_ui::hidePause();
-    afterMenuReady([hash] { openInSolo(hash); });
+    returnToMainAndOpen(hash);
 }
 
 void UpNextPanelController::CancelExit() {
@@ -427,7 +384,7 @@ void UpNextPanelController::CancelExit() {
 namespace up_next_ui {
 void showResults(GlobalNamespace::ResultsViewController* results) {
     hideResults();
-    resultsScreen = createScreen("BeatNext Results Up Next", false, nullptr, results);
+    resultsScreen = createScreen("BeatNext Results", false, nullptr, results);
 }
 void hideResults() {
     if (resultsScreen)
@@ -436,7 +393,7 @@ void hideResults() {
 }
 void showPause(GlobalNamespace::PauseMenuManager* pause) {
     hidePause();
-    pauseScreen = createScreen("BeatNext Pause Up Next", true, pause, nullptr);
+    pauseScreen = createScreen("BeatNext Pause", true, pause, nullptr);
 }
 void hidePause() {
     if (pauseScreen)

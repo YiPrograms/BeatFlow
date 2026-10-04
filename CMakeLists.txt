@@ -90,6 +90,7 @@ if(BEATNEXT_BUILD_QUEST OR ANDROID)
         src/quest/SettingsViewController.cpp
         src/quest/SongSelectionNavigator.cpp
         src/quest/SongDetailsCatalog.cpp
+        src/quest/UpNextListCell.cpp
         src/quest/UpNextPanelController.cpp
         src/quest/main.cpp
     )
