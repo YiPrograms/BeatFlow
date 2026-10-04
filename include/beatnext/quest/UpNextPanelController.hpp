@@ -23,6 +23,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(beatnext::quest, UpNextPanelController, UnityEn
     DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, loadingProgressText);
     DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, detailTitleText);
     DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, detailArtistText);
+    DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, detailMapText);
     DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, detailMetaText);
     DECLARE_INSTANCE_FIELD(UnityW<TMPro::TextMeshProUGUI>, detailDifficultyText);
     DECLARE_INSTANCE_FIELD(UnityW<UnityEngine::UI::Image>, detailImage);

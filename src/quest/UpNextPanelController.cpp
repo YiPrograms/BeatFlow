@@ -46,13 +46,13 @@ constexpr UnityEngine::Vector2 PanelSize{148.0F, 146.0F};
 constexpr float PanelScale = 0.022F;
 constexpr float FallbackPanelZ = 2.8F;
 constexpr float ResultsFallbackY = 1.85F;
-constexpr float PauseFallbackY = 1.80F;
+constexpr float PauseFallbackY = 1.95F;
 constexpr float ResultsYOffset = 0.35F;
-constexpr float PauseYOffset = 0.95F;
+constexpr float PauseYOffset = 1.15F;
 constexpr float RadiansToDegrees = 57.2957795F;
 constexpr float DegreesToRadians = 0.0174532925F;
 constexpr float ResultsAngleOffset = 52.0F;
-constexpr float PauseAngleOffset = 58.0F;
+constexpr float PauseAngleOffset = 64.0F;
 
 struct PanelPlacement {
     UnityEngine::Vector3 position;
@@ -297,10 +297,9 @@ void UpNextPanelController::SelectSong(UnityW<HMUI::TableView> table, int index)
 void UpNextPanelController::render(const RecommendationSessionState& state) {
     setText(headingText, state.stale ? "BeatNext · Cached/offline" : "BeatNext");
     if (state.sourceTrack) {
-        setText(currentTrackText, "Matched on YouTube Music: " + state.sourceTrack->title + " · " +
-                                      presentation::artists(*state.sourceTrack));
+        setText(currentTrackText, state.sourceTrack->title);
     } else {
-        setText(currentTrackText, "Matching this song on YouTube Music…");
+        setText(currentTrackText, "Matching this song…");
     }
     if (youtubeButton != nullptr) {
         youtubeButton->get_gameObject()->set_active(state.sourceTrack &&
@@ -346,6 +345,7 @@ void UpNextPanelController::render(const RecommendationSessionState& state) {
     if (!state.selectedIndex || *state.selectedIndex >= state.items.size()) {
         setText(detailTitleText, state.loading ? "Preparing BeatNext" : "Select a recommendation");
         setText(detailArtistText, "");
+        setText(detailMapText, "");
         setText(detailMetaText, "");
         setText(detailDifficultyText, "");
         if (actionButton != nullptr)
@@ -360,14 +360,16 @@ void UpNextPanelController::render(const RecommendationSessionState& state) {
     const auto& recommendation = item.recommendation;
     setText(detailTitleText, recommendation.track.title);
     setText(detailArtistText, presentation::artists(recommendation.track));
+    setText(detailMapText,
+            "BeatSaver: " + recommendation.map.songTitle + " · " + recommendation.map.songArtist);
     setText(detailMetaText, presentation::mapMetadata(recommendation));
     const auto difficultyText = item.status == RecommendationItemStatus::Failed
                                     ? item.message + " Select Retry download to try again."
                                     : presentation::difficulties(recommendation);
     setText(detailDifficultyText, difficultyText);
     if (detailImage != nullptr) {
-        const auto& image = recommendation.track.artworkUrl.empty() ? recommendation.map.coverUrl
-                                                                    : recommendation.track.artworkUrl;
+        const auto& image = recommendation.map.coverUrl.empty() ? recommendation.track.artworkUrl
+                                                                : recommendation.map.coverUrl;
         detailImage->get_gameObject()->set_active(!image.empty());
         const std::string loaded = loadedArtworkUrl ? static_cast<std::string>(loadedArtworkUrl) : "";
         if (!image.empty() && image != loaded) {

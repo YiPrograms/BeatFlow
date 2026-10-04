@@ -57,18 +57,18 @@ UpNextListCell* UpNextListCell::populate(const RecommendationItemState& item) {
     else
         setText(statusText, "");
 
-    titleText->set_fontSize(3.6F);
+    titleText->set_fontSize(4.2F);
     titleText->set_color(UnityEngine::Color::get_white());
-    statusText->set_fontSize(3.0F);
+    statusText->set_fontSize(3.4F);
     statusText->set_color(UnityEngine::Color::get_white());
-    artistText->set_fontSize(2.9F);
+    artistText->set_fontSize(3.4F);
     artistText->set_color(UnityEngine::Color(0.90F, 0.90F, 0.90F, 1.0F));
-    mapperText->set_fontSize(2.8F);
+    mapperText->set_fontSize(3.2F);
     mapperText->set_color(UnityEngine::Color(0.78F, 0.78F, 0.78F, 1.0F));
 
     for (int index = 0; index < difficultyTexts.size(); ++index) {
         auto* text = difficultyTexts[index];
-        text->set_fontSize(3.0F);
+        text->set_fontSize(3.4F);
         text->set_color(UnityEngine::Color::get_white());
         const bool visible = static_cast<std::size_t>(index) < recommendation.playableDifficulties.size();
         text->get_gameObject()->set_active(visible);

@@ -2,32 +2,29 @@
 
 #include "beatnext/quest/Logger.hpp"
 
-#include "GlobalNamespace/LevelCollectionViewController.hpp"
-#include "GlobalNamespace/SongPreviewPlayer.hpp"
-#include "System/Action.hpp"
-#include "System/Threading/CancellationToken.hpp"
 #include "UnityEngine/AudioClip.hpp"
+#include "UnityEngine/AudioSource.hpp"
 #include "UnityEngine/AudioType.hpp"
+#include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Networking/DownloadHandlerAudioClip.hpp"
 #include "UnityEngine/Networking/UnityWebRequest.hpp"
 #include "UnityEngine/Networking/UnityWebRequestMultimedia.hpp"
 #include "UnityEngine/Object.hpp"
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+#include "beatsaber-hook/shared/utils/typedefs-wrappers.hpp"
 #include "bsml/shared/BSML/SharedCoroutineStarter.hpp"
-#include "bsml/shared/Helpers/delegates.hpp"
-#include "bsml/shared/Helpers/getters.hpp"
 #include "custom-types/shared/coroutine.hpp"
-#include "songcore/shared/SongCore.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
-#include <functional>
 
 namespace beatnext::quest::recommendation_preview {
 namespace {
 
 std::uint64_t requestGeneration = 0;
+SafePtrUnity<UnityEngine::GameObject> previewObject;
+SafePtrUnity<UnityEngine::AudioClip> activeClip;
 
 std::string lowerAscii(std::string value) {
     std::transform(value.begin(), value.end(), value.begin(),
@@ -35,8 +32,32 @@ std::string lowerAscii(std::string value) {
     return value;
 }
 
-GlobalNamespace::SongPreviewPlayer* player() {
-    return BSML::Helpers::GetDiContainer()->Resolve<GlobalNamespace::SongPreviewPlayer*>();
+UnityEngine::AudioSource* player() {
+    if (!previewObject) {
+        auto* object = UnityEngine::GameObject::New_ctor("BeatNext Preview Player");
+        UnityEngine::Object::DontDestroyOnLoad(object);
+        auto* source = object->AddComponent<UnityEngine::AudioSource*>();
+        source->set_playOnAwake(false);
+        source->set_loop(false);
+        source->set_spatialBlend(0.0F);
+        source->set_ignoreListenerPause(true);
+        source->set_volume(0.75F);
+        previewObject = object;
+    }
+    return previewObject.ptr()->GetComponent<UnityEngine::AudioSource*>();
+}
+
+void releaseClip() {
+    if (previewObject) {
+        auto* source = previewObject.ptr()->GetComponent<UnityEngine::AudioSource*>();
+        if (source != nullptr) {
+            source->Stop();
+            source->set_clip(nullptr);
+        }
+    }
+    if (activeClip)
+        UnityEngine::Object::Destroy(activeClip.ptr());
+    activeClip = nullptr;
 }
 
 custom_types::Helpers::Coroutine loadRemotePreview(std::string url, std::uint64_t generation) {
@@ -59,31 +80,18 @@ custom_types::Helpers::Coroutine loadRemotePreview(std::string url, std::uint64_
         co_return;
     }
 
+    releaseClip();
+    activeClip = clip;
     auto* previewPlayer = player();
-    if (previewPlayer == nullptr) {
-        UnityEngine::Object::Destroy(clip);
-        co_return;
-    }
-    auto* cleanup = BSML::MakeDelegate<System::Action*>(std::function<void()>([clip] {
-        if (clip != nullptr)
-            UnityEngine::Object::Destroy(clip);
-    }));
-    previewPlayer->CrossfadeTo(clip, -5.0F, 0.0F, clip->get_length(), cleanup);
+    previewPlayer->set_clip(clip);
+    previewPlayer->Play();
 }
 
 } // namespace
 
 void play(const RecommendedMap& recommendation) {
     const auto generation = ++requestGeneration;
-    if (auto* level = SongCore::API::Loading::GetLevelByHash(recommendation.map.hash)) {
-        auto* controller =
-            BSML::Helpers::GetDiContainer()->Resolve<GlobalNamespace::LevelCollectionViewController*>();
-        if (controller != nullptr) {
-            controller->SongPlayerCrossfadeToLevelAsync(level,
-                                                        System::Threading::CancellationToken::get_None());
-            return;
-        }
-    }
+    releaseClip();
 
     const auto url = "https://cdn.beatsaver.com/" + lowerAscii(recommendation.map.hash) + ".mp3";
     BSML::SharedCoroutineStarter::get_instance()->StartCoroutine(
@@ -92,8 +100,7 @@ void play(const RecommendedMap& recommendation) {
 
 void stop() {
     ++requestGeneration;
-    if (auto* previewPlayer = player())
-        previewPlayer->CrossfadeToDefault();
+    releaseClip();
 }
 
 } // namespace beatnext::quest::recommendation_preview

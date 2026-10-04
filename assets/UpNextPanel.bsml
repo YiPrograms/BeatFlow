@@ -3,14 +3,14 @@
           xsi:noNamespaceSchemaLocation='https://raw.githubusercontent.com/RedBrumbler/Quest-BSML-Docs/gh-pages/schema.xsd'>
   <text id='headingText' text='BeatNext' font-size='6.5' color='#FFFFFF' align='Center' preferred-height='7'/>
   <horizontal preferred-height='10' bg='round-rect-panel' bg-color='#06162299' pad-left='2' pad-right='1'
-              child-expand-width='false' spacing='1'>
-    <text id='currentTrackText' text='Matching this song on YouTube Music…' font-size='3.8' color='#FFFFFF'
+              child-expand-width='false' child-align='MiddleRight' spacing='1'>
+    <text id='currentTrackText' text='Matching this song…' font-size='4.5' color='#FFFFFF'
           align='MidlineLeft' preferred-width='128' preferred-height='9' word-wrapping='true'
           overflow-mode='Ellipsis' rich-text='false'/>
     <button id='youtubeButton' on-click='OpenYouTubeMusic' text='↗' preferred-width='11' preferred-height='8'
             font-size='5' hover-hint='Open the matched song in YouTube Music'/>
   </horizontal>
-  <text id='statusText' text='Finding recommendations…' font-size='4' color='#E5E5E5' align='Center'
+  <text id='statusText' text='Finding recommendations…' font-size='4.5' color='#E5E5E5' align='Center'
         preferred-height='5.5' word-wrapping='true'/>
   <stack preferred-height='112'>
     <horizontal id='contentContainer' preferred-height='112' child-expand-height='false' spacing='2'>
@@ -21,22 +21,24 @@
       <vertical preferred-width='6' preferred-height='112' vertical-fit='Unconstrained'/>
       <vertical preferred-width='52' preferred-height='112' bg='round-rect-panel' bg-color='#06162299'
                 pad='2' spacing='1' child-expand-height='false'>
-        <text id='detailTitleText' text='Select a recommendation' font-size='5' color='#FFFFFF' align='Center'
+        <text id='detailTitleText' text='Select a recommendation' font-size='5.5' color='#FFFFFF' align='Center'
               preferred-height='14' word-wrapping='true' overflow-mode='Ellipsis' rich-text='false'/>
-        <text id='detailArtistText' text='' font-size='3.9' color='#E5E5E5' align='Center'
+        <text id='detailArtistText' text='' font-size='4.3' color='#E5E5E5' align='Center'
               preferred-height='8' word-wrapping='true' overflow-mode='Ellipsis' rich-text='false'/>
-        <image id='detailImage' preferred-width='40' preferred-height='40' preserve-aspect='true'/>
-        <text id='detailMetaText' text='' font-size='3.6' color='#FFFFFF' align='Center' preferred-height='7'
+        <text id='detailMapText' text='' font-size='3.7' color='#BFD8E8' align='Center'
+              preferred-height='8' word-wrapping='true' overflow-mode='Ellipsis' rich-text='false'/>
+        <image id='detailImage' preferred-width='36' preferred-height='36' preserve-aspect='true'/>
+        <text id='detailMetaText' text='' font-size='3.9' color='#FFFFFF' align='Center' preferred-height='7'
               word-wrapping='true' overflow-mode='Ellipsis'/>
-        <text id='detailDifficultyText' text='' font-size='3.6' color='#FFFFFF' align='Center' preferred-height='8'
+        <text id='detailDifficultyText' text='' font-size='3.9' color='#FFFFFF' align='Center' preferred-height='8'
               word-wrapping='true' overflow-mode='Ellipsis'/>
         <primary-button id='actionButton' on-click='Action' text='Play' preferred-height='10' font-size='4.8'/>
       </vertical>
     </horizontal>
     <vertical id='loadingContainer' preferred-width='144' preferred-height='112' child-align='MiddleCenter'
-              spacing='4'>
-      <loading-indicator id='loadingSpinner' preserve-aspect='true' preferred-width='22' preferred-height='22'/>
-      <text id='loadingProgressText' text='Identifying this song on YouTube Music…' font-size='4.5'
+              spacing='3'>
+      <loading-indicator id='loadingSpinner' preserve-aspect='true' preferred-width='8' preferred-height='8'/>
+      <text id='loadingProgressText' text='Identifying this song on YouTube Music…' font-size='5'
             color='#FFFFFF' align='Center' preferred-width='110' preferred-height='18' word-wrapping='true'/>
     </vertical>
   </stack>
